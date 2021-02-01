@@ -2,7 +2,7 @@ from math import isnan
 from rpy2.rinterface import NULL as NULL
 from rpy2.rinterface import NAIntegerType
 
-from config import rtypes, max_columns
+from py2r.config import rtypes, max_columns
 
 def convert_listvector(r_response, limit=100):
     rett_type = "table"

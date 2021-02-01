@@ -1,7 +1,7 @@
 from json import loads
 from rpy2 import robjects
 
-from rUtils import execute_r
+from py2r.rUtils import execute_r
 
 def openblankdataset(datasetName):
     open_cmd = f"BSkyOpenNewDataset(datasetName='{datasetName}')" 

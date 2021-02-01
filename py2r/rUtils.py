@@ -1,8 +1,9 @@
 import random
 import string
 
-from data_converter import convert_to_data
 import rpy2.robjects as robjects
+
+from py2r.data_converter import convert_to_data
 
 def randomString(stringLength=8):
     letters = string.ascii_lowercase

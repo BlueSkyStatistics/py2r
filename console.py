@@ -1,8 +1,8 @@
 import cmd
 from json import loads, dumps, decoder
 from traceback import format_exc
-from rDriver import RDriver
-from rUtils import execute_r
+from py2r.rDriver import RDriver
+from py2r.rUtils import execute_r
 
 class RShell(cmd.Cmd):
     prompt = ''

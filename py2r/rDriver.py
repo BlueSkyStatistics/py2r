@@ -12,11 +12,11 @@ import rpy2.robjects as robjects
 import rpy2.robjects.vectors as vectors
 from rpy2.robjects.packages import importr
 
-from data_converter import *
-from config import *
-from blueskyparser import blueSkyParser
-from rUtils import execute_r, randomString, str2bool
-import rDataset as ds
+from py2r.data_converter import *
+from py2r.config import *
+from py2r.blueskyparser import blueSkyParser
+from py2r.rUtils import execute_r, randomString, str2bool
+import py2r.rDataset as ds
 
 r = robjects.r
 bsky = blueSkyParser()

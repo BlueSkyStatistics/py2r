@@ -3,9 +3,9 @@ import rpy2.robjects.vectors as vectors
 from rpy2 import robjects
 from rpy2.rinterface import NULL as NULL
 
-from data_converter import convert_to_data, convert_matrix, convert_listvector
-from rDataset import load as loadDS
-from config import images, empty_image_size
+from py2r.data_converter import convert_to_data, convert_matrix, convert_listvector
+from py2r.rDataset import load as loadDS
+from py2r.config import images, empty_image_size
 
 
 class blueSkyParser(object):
