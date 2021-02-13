@@ -1,4 +1,5 @@
 import re
+import webbrowser
 from os import path, environ
 from time import sleep, time
 from json import dumps
@@ -27,7 +28,9 @@ class RDriver:
     else:
         tmpdir = environ.get('TMP', environ.get('TEMP', ""))
     sinkfile = path.join(tmpdir, 'sink.txt')
+    sinkhtml = path.join(tmpdir, 'help.html')
     sinkfile = sinkfile.replace("\\", "/")
+    sinkhtml = sinkhtml.replace("\\", "/")
 
     def initiate_libs(self):
         importr("gdata")
@@ -104,6 +107,12 @@ dev.off()
         r("""dev.set(2)
 dev.off()""")
 
+    def rhelp(self, cmd):
+        res = r(f"""file <- {cmd}
+pkgname <- basename(dirname(dirname(file)))
+temp <- tools::Rd2HTML(utils:::.getHelpFile(file), out=file("{self.sinkhtml}", open = "wt"), package = pkgname)""")
+        webbrowser.open(f"file://{self.sinkhtml}", new=2)
+        return "Done"
 
     def run(self, cmd, eval=True, limit=20, updateDataSet=False, datasetName=None, parent_id=None, output_id=None, test=False):
         code = 200

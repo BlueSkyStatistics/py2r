@@ -1,6 +1,6 @@
 from os import path
 from json import loads
-import rDriver
+from py2r import rDriver
 
 
 def __init__r():
@@ -14,5 +14,30 @@ def test_simple_out():
 BSkyFormat(df1)""", test=True):
         print(each)
 
+def test_help():
+    r = __init__r()
+    for each in r.rhelp("""help(geom_bar, package=ggplot2)"""):
+        print(each)
+    from time import sleep
+    sleep(120)
+
 if __name__ == "__main__":
-    test_simple_out()
+    test_help()
+
+
+# import rpy2.rinterface as ri
+# import rpy2.robjects as robjects
+
+# r = robjects.r
+
+# r("""fp <- file("tmp", open = "wt")
+# options("warn" = 1)
+# sink(fp)
+# sink(fp, type = "message")""")
+
+# m = r("""help(geom_bar, package=ggplot2)""")
+
+# r("""sink(type = "message")
+# sink()
+# flush(fp)
+# close(fp)""")

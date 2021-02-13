@@ -19,6 +19,10 @@ class RShell(cmd.Cmd):
         for message in self.r.run(**cmd): 
             print(dumps(message))
 
+    def do_rhelp(self, args):
+        print(dumps({"message": args, "type": "log"}))
+        self.r.rhelp(**loads(args))
+
     def do_r(self, args):
         message_order = 0
         try:
