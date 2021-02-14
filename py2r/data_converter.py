@@ -39,8 +39,15 @@ def convert_table(r_response, limit=20):
     if list(data.keys()):
         keys = list(data.keys())[:max_columns]
         response = [keys]
+        longest = []
+        for x in data.keys():
+            try:
+                longest.append(len(data[x]))
+            except:
+                longest.append(0)
+        max_index = max(longest)
         try:
-            for i in range(len(data[keys[0]]) if len(data[keys[0]]) < limit else limit):
+            for i in range(max_index if max_index < limit else limit):
                 _arr = []
                 for j in range(len(keys)):
                     try:
