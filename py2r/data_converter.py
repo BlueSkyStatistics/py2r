@@ -43,7 +43,10 @@ def convert_table(r_response, limit=20):
             for i in range(len(data[keys[0]]) if len(data[keys[0]]) < limit else limit):
                 _arr = []
                 for j in range(len(keys)):
-                    _arr.append(data[keys[j]][i])
+                    try:
+                        _arr.append(data[keys[j]][i])
+                    except IndexError:
+                        _arr.append("")
                 response.append(_arr[:limit+1])
         except TypeError:
             _arr = []

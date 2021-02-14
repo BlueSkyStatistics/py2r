@@ -95,8 +95,11 @@ class RDriver:
 
 
     def refresh(self, datasetName, reloadCols=True, fromrowidx=1, torowidx=20):
-        for message in ds.refresh(datasetName, reloadCols, fromrowidx, torowidx):
-            yield message
+        try:
+            for message in ds.refresh(datasetName, reloadCols, fromrowidx, torowidx):
+                yield message
+        except:
+            yield {"message": format_exc(), "type": "log"}
 
     @staticmethod
     def close_devices():

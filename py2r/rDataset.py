@@ -43,10 +43,15 @@ def refresh(datasetName, reloadCols=True, fromrowidx=1, torowidx=20):
         torowidx=res['message']['rowcount']
     df, _ = execute_r(f'jsonlite::toJSON({datasetName}[{fromrowidx}:{torowidx},], na=NULL)')
     df = loads(df[0])
-    df_list = [list(df[0].keys())]
-    for row in df:
-        df_list.append(list(row.values()))
-        #cols no needed in following and reloadCols should be False
+    try:
+        df_list = [list(df[0].keys())]
+        for row in df:
+            df_list.append(list(row.values()))
+            #cols no needed in following and reloadCols should be False
+    except AttributeError:
+        df_list = []
+        for row in df:
+            df_list.append([row]) 
     res["message"]["df"] = df_list
     res["message"]["fromidx"] = fromrowidx
     res["message"]["toidx"] = torowidx
