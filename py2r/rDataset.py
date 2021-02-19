@@ -70,14 +70,14 @@ def load(datasetName):
         yield message["message"]
 
 def getrowcountcolprops(datasetName, reloadCols=True):
-    rc, _ = execute_r(f'jsonlite::toJSON(nrow({datasetName}))')
+    rc, _ = execute_r(f'jsonlite::toJSON(nrow(.GlobalEnv${datasetName}))')
     rc = loads(rc[0])
-    cc, _ = execute_r(f'jsonlite::toJSON(ncol({datasetName}))')
+    cc, _ = execute_r(f'jsonlite::toJSON(ncol(.GlobalEnv${datasetName}))')
     cc = loads(cc[0])
     res = {"name": datasetName, "cols": [], "rowcount": rc[0], "colcount":cc[0], "type":"rccolprop"}#rccolprop = rowcount-colprop
     if reloadCols:
         for index in range(1, cc[0]+1):
-            col_details_cmd = f"data=UAgetColProperties(dataSetNameOrIndex='{datasetName}', colNameOrIndex={index}, " \
+            col_details_cmd = f"data=UAgetColProperties(dataSetNameOrIndex='.GlobalEnv${datasetName}', colNameOrIndex={index}, " \
                             f"asClass=FALSE, isDSValidated=TRUE);"             
             execute_r(col_details_cmd)
             col, _ = execute_r("jsonlite::toJSON(data, na = NULL)")
