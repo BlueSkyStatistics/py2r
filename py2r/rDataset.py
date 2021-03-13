@@ -74,7 +74,7 @@ def getrowcountcolprops(datasetName, reloadCols=True):
     rc = loads(rc[0])
     cc, _ = execute_r(f'jsonlite::toJSON(ncol(.GlobalEnv${datasetName}))')
     cc = loads(cc[0])
-    res = {"name": datasetName, "cols": [], "rowcount": rc[0], "colcount":cc[0], "type":"rccolprop"}#rccolprop = rowcount-colprop
+    res = {"name": datasetName, "cols": [], "rowcount": rc[0], "colcount":cc[0], "type":"rccolprop"} #rccolprop = rowcount-colprop
     if reloadCols:
         for index in range(1, cc[0]+1):
             col_details_cmd = f"data=UAgetColProperties(dataSetNameOrIndex='.GlobalEnv${datasetName}', colNameOrIndex={index}, " \

@@ -30,7 +30,10 @@ class RShell(cmd.Cmd):
                 if message["type"] != 'log':
                     message["count"] = message_order
                     message_order += 1
-                print(dumps(message))
+                try:
+                    print(dumps(message))
+                except TypeError:
+                    print(dumps({"message": str(message), "type": "exception"}))
         except:
             print(dumps({"message": f"CLIENT_EXCEPTION (run): unexpected command format {args}: exception: {format_exc()}",
                          "type": "exception",

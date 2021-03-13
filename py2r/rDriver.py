@@ -53,17 +53,37 @@ class RDriver:
         cmd_arr = cmd.split("\n")
         cmd = ''
         for each in cmd_arr:
-            cmd += re.sub(r'^\s?[a-zA-Z0-9]+\n', self.wrap_with_space, f"{each}\n")
+            if any(each.strip().endswith(a) for a in [",", "+", "%>%"]):
+                cmd += f" {each.strip()}"
+            else: 
+                if cmd.endswith("\n"):
+                    cmd += f"{each.strip()}\n"
+                else:
+                    cmd += f" {each.strip()}\n"
         return cmd.strip()
 
     def openblankds(self, datasetName='Dataset1'):
         for message in ds.openblankdataset(datasetName):
             yield message
+    
+    @staticmethod
+    def clean(output, cmd):
+        # output = output.replace("\n+     ", "")
+        # for line in cmd.split('\n'):
+        #     if line and line in output:
+        #         if line.strip().endswith(";"):
+        #             line = line.strip()[:-1]
+        #         output = output.replace(f'> {line.strip()}\n', '')
+        # return output
+        out = ''
+        for line in output.split("\n"):
+            if not any(line.startswith(a) for a in [">", "+"]):
+                out += f'{line}\n'
+        return out
 
     def open(self, file_path=None, datasetName=None, wsName='NULL',
              replace_ds='TRUE', csvHeader='TRUE', char_to_factor='TRUE',
              basket_data='FALSE', csv_sep=',', delim='.'):
-        #print(rowendindex)
         filetype = file_path.split(".")[-1].upper()
         worksheets = []
         if filetype in ('XLS', 'XLSX') and wsName == 'NULL':
@@ -90,7 +110,10 @@ class RDriver:
                 }
             }
         if len(worksheets) == 0 or wsName != 'NULL':
-            for message in ds.open(file_path, filetype, wsName, replace_ds, csvHeader, char_to_factor, basket_data, csv_sep, delim, datasetName):
+            for message in ds.open(file_path, filetype, wsName, 
+                                    replace_ds, csvHeader, 
+                                    char_to_factor, basket_data, 
+                                    csv_sep, delim, datasetName):
                 yield message
 
 
@@ -117,7 +140,8 @@ temp <- tools::Rd2HTML(utils:::.getHelpFile(file), out=file("{self.sinkhtml}", o
         webbrowser.open(f"file://{self.sinkhtml}", new=2)
         return "Done"
 
-    def run(self, cmd, eval=True, limit=20, updateDataSet=False, datasetName=None, parent_id=None, output_id=None, test=False):
+    def run(self, cmd, eval=True, limit=20, updateDataSet=False, datasetName=None, 
+            parent_id=None, output_id=None, test=False):
         code = 200
         return_type = None
         sanitized_cmd = self.wrapRcommand(cmd, datasetName)
@@ -135,7 +159,9 @@ sink(fp, type = "message")""")
             # Executing R
             message=r(f"""
 dev.set(2)
+withAutoprint({{
 {sanitized_cmd}
+}}, deparseCtrl=c("keepInteger", "showAttributes", "keepNA"), keep.source=TRUE)
 """)
             # closing sink file
             r("""sink(type = "message")
@@ -174,13 +200,21 @@ close(fp)""")
             # processing lines from sinkfile
             with open(self.sinkfile) as f:
                 for line in f.readlines():
-                    if any(a in line for a in ["BSkyFormatInternalSyncFileMarker", "BSkyGraphicsFormatInternalSyncFileMarker", "BSkyDataGridRefresh"]):
+                    if any(a in line for a in ["BSkyFormatInternalSyncFileMarker", 
+                                               "BSkyGraphicsFormatInternalSyncFileMarker", 
+                                               "BSkyDataGridRefresh"]):
                         if output_buffer.strip():
-                            for msg in self.process_message(output_buffer.strip(), '', cmd=cmd, eval=False, limit=limit, updateDataSet=updateDataSet, datasetName=datasetName, parent_id=parent_id, output_id=output_id, code=code):
+                            for msg in self.process_message(self.clean(output_buffer, sanitized_cmd).strip(), 
+                                                            '', cmd=cmd, eval=False, limit=limit, 
+                                                            updateDataSet=updateDataSet, datasetName=datasetName, 
+                                                            parent_id=parent_id, output_id=output_id, code=code):
                                 msg["type"] = "markdown"
                                 yield msg
                         output_buffer = ""
-                        for msg in bsky.bskyformat_parser(cmd=cmd, limit=limit, updateDataSet=updateDataSet, datasetName=datasetName, parent_id=parent_id, output_id=output_id, code=code, filename=filename, object_index=object_index):
+                        for msg in bsky.bskyformat_parser(cmd=cmd, limit=limit, 
+                                                          updateDataSet=updateDataSet, datasetName=datasetName, 
+                                                          parent_id=parent_id, output_id=output_id, code=code, 
+                                                          filename=filename, object_index=object_index):
                             if msg["type"] == images:
                                 return_type = msg["type"]
                                 image_index += 1
@@ -190,7 +224,8 @@ close(fp)""")
                         if line.strip():
                             output_buffer += f"{line.strip()}\n"
             if output_buffer.strip():
-                for msg in self.process_message(output_buffer.strip(), '', cmd=cmd, eval=False, 
+                for msg in self.process_message(self.clean(output_buffer, sanitized_cmd).strip(), '', 
+                                                cmd=cmd, eval=False, 
                                                 limit=limit, updateDataSet=updateDataSet, 
                                                 datasetName=datasetName, parent_id=parent_id, 
                                                 output_id=output_id, code=code):
