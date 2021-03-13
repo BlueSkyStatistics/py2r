@@ -1,6 +1,6 @@
 from os import path
 from json import loads
-import rDriver
+from py2r import rDriver
 
 
 def __init__r():
@@ -11,7 +11,7 @@ def __init__r():
 
 def test_openempty_dataset():
     r = __init__r()
-    p = path.abspath("D:/UniqueID.csv")
+    p = path.abspath("D:/Development/BlueSkyJS/testData/mtcars.RData")
     ds = []
     for msg in r.openblankds('Dataset1'):
         print(f'this is msg: {msg}')
@@ -20,6 +20,20 @@ def test_openempty_dataset():
     rowc = ds[1]["rowcount"]
     for msg in r.refresh("Dataset1", True,0,rowc):
         assert isinstance(msg["message"]["df"], list)
+
+
+def test_open_dataset():
+    r = __init__r()
+    ds = []
+    for msg in r.open('D:/Development/BlueSkyJS/testData/mtcars.RData', datasetName="mtcars"):
+        print(f'this is msg: {msg}')
+        ds.append(msg)
+    assert len(ds[1]["cols"]) > 1
+    rowc = ds[1]["rowcount"]
+    for msg in r.refresh("mtcars", True,0,rowc):
+        print(msg)
+        assert isinstance(msg["message"]["df"], list)
+
 
 # open a dataset and modify one value of one column
 # Whoever is testing must set the correct path to file
@@ -54,4 +68,4 @@ def test_opendynamic_dataset2():
         assert isinstance(msg["message"]["df"], list)
 
 if __name__ == "__main__":
-    test_openempty_dataset()
+    test_open_dataset()

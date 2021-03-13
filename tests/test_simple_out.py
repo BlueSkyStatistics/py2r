@@ -21,8 +21,23 @@ def test_help():
     from time import sleep
     sleep(120)
 
+def test_wrapped_tibble():
+    r = __init__r()
+    for each in r.run("""## [Bar Chart With Counts]
+require(ggplot2);
+require(ggthemes);
+require(stringr);
+plot <- ggplot(data=cholStudy, aes(x=gender,y=cho1)) +
+	geom_bar(position="stack",alpha=0.5,stat="identity") +
+	labs(x="gender",y="cho1",title= "Bar chart for X axis: gender,Y axis: cho1 ") +
+	xlab("gender") +
+	ylab("cho1") + 	theme_grey() + 
+	theme(text=element_text(family="sans",face="plain",color="#000000",size=12,hjust=0.5,vjust=0.5))
+print(plot)"""):
+        print(each)
+
 if __name__ == "__main__":
-    test_help()
+    test_wrapped_tibble()
 
 
 # import rpy2.rinterface as ri
