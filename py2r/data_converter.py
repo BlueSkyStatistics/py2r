@@ -34,7 +34,10 @@ def convert_table(r_response, limit=20):
     elif hasattr(r_response, "names"):
         if r_response.names != NULL:
             if (list(r_response.names) == ['value', 'visible']):
-                return convert_to_data(r_response[0], limit=limit)
+                if r_response[1][0]:
+                    return convert_to_data(r_response[0], limit=limit)
+                else:
+                    return None, None 
             for index, each in enumerate(r_response.names):
                 data[each] = []
                 data[each], _ = convert_to_data(r_response[index], limit, False)

@@ -273,15 +273,16 @@ dev.off()""")
             else:
                 return_type = "log"
                 message = str(message)
-            yield {
-                "message": message,
-                "caption": "",
-                "type": return_type,
-                "code": code,
-                "updateDataSet": updateDataSet,
-                "name": datasetName,
-                "cmd": cmd,
-                "eval": eval,
-                "parent_id": parent_id,
-                "output_id": output_id
-            }
+            if message:
+                yield {
+                    "message": message,
+                    "caption": "",
+                    "type": return_type,
+                    "code": code,
+                    "updateDataSet": updateDataSet,
+                    "name": datasetName,
+                    "cmd": cmd,
+                    "eval": eval,
+                    "parent_id": parent_id,
+                    "output_id": output_id
+                }

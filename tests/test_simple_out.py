@@ -23,17 +23,12 @@ def test_help():
 
 def test_wrapped_tibble():
     r = __init__r()
-    for each in r.run("""## [Bar Chart With Counts]
-require(ggplot2);
-require(ggthemes);
-require(stringr);
-plot <- ggplot(data=cholStudy, aes(x=gender,y=cho1)) +
-	geom_bar(position="stack",alpha=0.5,stat="identity") +
-	labs(x="gender",y="cho1",title= "Bar chart for X axis: gender,Y axis: cho1 ") +
-	xlab("gender") +
-	ylab("cho1") + 	theme_grey() + 
-	theme(text=element_text(family="sans",face="plain",color="#000000",size=12,hjust=0.5,vjust=0.5))
-print(plot)"""):
+    for each in r.run("""library(ggplot2)
+library(dplyr)
+
+smaller <- diamonds %>% 
+  filter(carat <= 2.5)
+smaller"""):
         print(each)
 
 if __name__ == "__main__":
