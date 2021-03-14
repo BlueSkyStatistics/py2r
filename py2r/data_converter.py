@@ -84,8 +84,7 @@ def convert_to_data(r_response, limit=20, is_table=False):
     else:
         type_name = r_response.typeof.name
     if is_factor:
-        isNA = isinstance(_array[0], NAIntegerType)
-        response =['NA'] if isNA else [r_response.levels[x - 1] for x in _array]
+        response = ['NA' if isinstance(x, NAIntegerType) else r_response.levels[x - 1] for x in _array]
         rett_type = 'array'
     elif type_name == 'REALSXP':
         response = [_clear_nan(x) for x in _array]
