@@ -28,7 +28,7 @@ class RShell(cmd.Cmd):
         for message in self.r.run(**args):
             print(dumps({"message":message, "type": "log"}))
         print(dumps({"message": "export complete", "type": "log"}))
-
+ 
     def do_rhelp(self, args):
         self.r.rhelp(**loads(args))
 
