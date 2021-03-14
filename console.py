@@ -1,4 +1,5 @@
 import cmd
+from os import environ
 from json import loads, dumps, decoder
 from traceback import format_exc
 from py2r.rDriver import RDriver
@@ -18,9 +19,17 @@ class RShell(cmd.Cmd):
         self._cmd = ''
         for message in self.r.run(**cmd): 
             print(dumps(message))
+    
+    def do_export_html(self, args):
+        args = loads(args)
+        args['cmd'] = args['cmd'].replace("\\", "/")
+        args['cmd'] = f'''rmarkdown::find_pandoc(dir="{environ.get('PANDOC_PATH')}")
+{args['cmd']}'''
+        for message in self.r.run(**args):
+            print(dumps({"message":message, "type": "log"}))
+        print(dumps({"message": "export complete", "type": "log"}))
 
     def do_rhelp(self, args):
-        print(dumps({"message": args, "type": "log"}))
         self.r.rhelp(**loads(args))
 
     def do_r(self, args):
