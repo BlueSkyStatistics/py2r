@@ -42,6 +42,7 @@ class RDriver:
         importr("data.table")
         importr("foreign")
         importr("BlueSky")
+        importr("kableExtra")
 
     @staticmethod
     def wrap_with_space(match):
