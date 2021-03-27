@@ -9,6 +9,9 @@ def convert_listvector(r_response, limit=100):
     result, rett_type = convert_matrix(r_response[6])
     return result, rett_type
 
+def convert_html(r_response, limit=20):
+    return r_response[0], "html" 
+
 def convert_matrix(r_response, limit=100):
     rett_type = 'table'
     result = []

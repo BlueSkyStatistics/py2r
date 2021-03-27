@@ -1,6 +1,8 @@
 from os import path
-
-import rDriver
+from py2r import rDriver
+from py2r.rUtils import execute_r
+from py2r.blueskyparser import blueSkyParser
+# import rDriver
 
 
 def __init__r():
@@ -13,19 +15,21 @@ def test_convert_matrix_3x4():
 BSkyFormat(mydf)
 """
     r = __init__r()
-    message, return_type = r._execute_r(cmd, eval=False)
+    message, return_type = execute_r(cmd, eval=False)
     r.check_queue_not_empty()
     for msg in r.bskyformat_parser():
         assert isinstance(msg, dict)
 
 def test_convert_matrix_3x3():
-    cmd = """mydf <- data.frame(A=c(1,2,3), B=c('M', 'F', 'F'), D=c(1.1, 2.2, 3.3))
+    cmd = """BSkySetKableAndRmarkdownFormatting(BSkyKableFormatting = TRUE, BSkyRmarkdownFormatting = FALSE)
+mydf <- data.frame(A=c(1,2,3), B=c('M', 'F', 'F'), D=c(1.1, 2.2, 3.3))
 BSkyFormat(mydf)
 """
     r = __init__r()
-    message, return_type = r._execute_r(cmd, eval=False)
-    r.check_queue_not_empty()
-    for msg in r.bskyformat_parser():
+    message, return_type = execute_r(cmd, eval=False)
+    bsky = blueSkyParser()
+    bsky.check_queue_not_empty()
+    for msg in bsky.bskyformat_parser():
         assert isinstance(msg, dict)
 
 def test_convert_matrix_4x3():
@@ -108,6 +112,7 @@ BSkyFormat(BSky_Multiway_Cross_Tab)"""
 
 
 if __name__ == "__main__":
+    test_convert_matrix_3x3()
     # test_crosstab_multiway()
     # test_named_matrix()
     # test_convert_matrix_3x4()

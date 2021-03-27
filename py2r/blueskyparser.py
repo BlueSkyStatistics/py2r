@@ -3,7 +3,7 @@ import rpy2.robjects.vectors as vectors
 from rpy2 import robjects
 from rpy2.rinterface import NULL as NULL
 
-from py2r.data_converter import convert_to_data, convert_matrix, convert_listvector
+from py2r.data_converter import convert_to_data, convert_matrix, convert_listvector, convert_html
 from py2r.rDataset import load as loadDS
 from py2r.config import images, empty_image_size
 
@@ -13,7 +13,8 @@ class blueSkyParser(object):
         self.r = robjects.r
         self.type_mapping = {
             vectors.Matrix: convert_matrix,
-            vectors.ListVector: convert_listvector
+            vectors.ListVector: convert_listvector,
+            vectors.StrVector: convert_html
         }
     
     def check_queue_not_empty(self):
@@ -34,8 +35,8 @@ is.null(BSkyQueue)
         caption = ""
         image_index = 0
         for resp_index in range(start_index,end_index):
-            r_type = self.r(f'BSkyQueue[[{resp_index}]][[1]]')
-            r_response = self.r(f'BSkyQueue[[{resp_index}]][[2]]')
+            r_type = self.r(f'BSkyQueue[[{resp_index}]]')[0][0]
+            r_response = self.r(f'BSkyQueue[[{resp_index}]]')[0][1]
             if r_type[0]== 'BSkyFormat' and not till_the_end:
                 for message in self.process_BSKy_format(r_response, cmd=cmd, limit=limit, 
                     updateDataSet=updateDataSet, datasetName=datasetName, parent_id=parent_id, 

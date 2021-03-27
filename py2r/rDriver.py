@@ -153,7 +153,8 @@ temp <- tools::Rd2HTML(utils:::.getHelpFile(file), out=file("{self.sinkhtml}", o
             # opening graphics device
             r(f"""{images}(filename='{filename}', width={image_wigth}, height={image_height})""")
             # opening sink file
-            r(f"""fp <- file("{self.sinkfile}", open = "wt")
+            r(f"""BSkySetKableAndRmarkdownFormatting(BSkyKableFormatting = TRUE, BSkyRmarkdownFormatting = FALSE) 
+fp <- file("{self.sinkfile}", open = "wt")
 options("warn" = 1)
 sink(fp)
 sink(fp, type = "message")""")
@@ -224,23 +225,15 @@ close(fp)""")
                     else:
                         if line.strip():
                             output_buffer += f"{line.strip()}\n"
-            if output_buffer.strip():
-                for msg in self.process_message(self.clean(output_buffer, sanitized_cmd).strip(), '', 
-                                                cmd=cmd, eval=False, 
-                                                limit=limit, updateDataSet=updateDataSet, 
-                                                datasetName=datasetName, parent_id=parent_id, 
-                                                output_id=output_id, code=code):
-                    msg["type"] = "markdown"
-                    yield msg
             # Trying to process output if no BSKy format was in place
-            if object_index == 1:
-                for msg in self.process_message(message, filename, cmd=cmd, eval=eval, 
-                                                limit=limit, updateDataSet=updateDataSet, 
-                                                datasetName=datasetName, parent_id=parent_id, 
-                                                output_id=output_id, code=code):
-                    return_type = msg["type"]
-                    if msg["message"]:
-                        yield msg
+            # if object_index == 1:
+            #     for msg in self.process_message(message, filename, cmd=cmd, eval=eval, 
+            #                                     limit=limit, updateDataSet=updateDataSet, 
+            #                                     datasetName=datasetName, parent_id=parent_id, 
+            #                                     output_id=output_id, code=code):
+            #         return_type = msg["type"]
+            #         if msg["message"]:
+            #             yield msg
             # Process remaining bskyformats
             for msg in bsky.bskyformat_parser(cmd=cmd, limit=limit, updateDataSet=updateDataSet, datasetName=datasetName, parent_id=parent_id, output_id=output_id, code=code, filename=filename, object_index=object_index, till_the_end=True):
                 if msg["type"] == images:
@@ -256,6 +249,15 @@ close(fp)""")
                 else:
                     return_type = "Close device"
                 yield msg
+            # processing remaining console outputs
+            if output_buffer.strip():
+                for msg in self.process_message(self.clean(output_buffer, sanitized_cmd).strip(), '', 
+                                                cmd=cmd, eval=False, 
+                                                limit=limit, updateDataSet=updateDataSet, 
+                                                datasetName=datasetName, parent_id=parent_id, 
+                                                output_id=output_id, code=code):
+                    msg["type"] = "markdown"
+                    yield msg
             yield {"message": f"Output buffer: {output_buffer}", "type": "log"}
         # Weird workaround #2 to make ggplot work
         if return_type and return_type == images:
