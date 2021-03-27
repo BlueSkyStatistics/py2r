@@ -23,7 +23,8 @@ BSkyFormat(mydf)
 def test_convert_matrix_3x3():
     cmd = """BSkySetKableAndRmarkdownFormatting(BSkyKableFormatting = TRUE, BSkyRmarkdownFormatting = FALSE)
 mydf <- data.frame(A=c(1,2,3), B=c('M', 'F', 'F'), D=c(1.1, 2.2, 3.3))
-BSkyFormat(mydf)
+BSkyFormat("mydf")
+BSkyLoadRefresh("mydf")
 """
     r = __init__r()
     message, return_type = execute_r(cmd, eval=False)

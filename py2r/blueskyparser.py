@@ -36,13 +36,13 @@ is.null(BSkyQueue)
         image_index = 0
         for resp_index in range(start_index,end_index):
             r_type = self.r(f'BSkyQueue[[{resp_index}]]')[0][0]
-            r_response = self.r(f'BSkyQueue[[{resp_index}]]')[0][1]
-            if r_type[0]== 'BSkyFormat' and not till_the_end:
+            if isinstance(r_type, vectors.StrVector) and r_type[0]== 'BSkyFormat' and not till_the_end:
+                r_response = self.r(f'BSkyQueue[[{resp_index}]]')[0][1]
                 for message in self.process_BSKy_format(r_response, cmd=cmd, limit=limit, 
                     updateDataSet=updateDataSet, datasetName=datasetName, parent_id=parent_id, 
                     output_id=output_id, code=code):
                     yield message
-            elif r_type[0] == 'BSkyGraphicsFormat' and not till_the_end:
+            elif r_type == 'BSkyGraphicsFormat' and not till_the_end:
                 image_index += 1
                 yield {
                     "message": filename.replace("%03d", f'{image_index:03d}'),
@@ -56,7 +56,8 @@ is.null(BSkyQueue)
                     "parent_id": parent_id,
                     "output_id": output_id
             }
-            elif r_type[0] == 'BSkyDataGridRefresh':
+            elif r_type == 'BSkyDataGridRefresh':
+                r_response = self.r(f'BSkyQueue[[{resp_index}]]')[1]
                 for message in loadDS(r_response[0]):
                     yield message
 
