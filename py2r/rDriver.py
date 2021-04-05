@@ -43,6 +43,10 @@ class RDriver:
         importr("foreign")
         importr("BlueSky")
         importr("kableExtra")
+        r("""BSkySetKableAndRmarkdownFormatting(BSkyKableFormatting = TRUE, BSkyRmarkdownFormatting = FALSE)
+BSkySetHtmlStylingSetting ()
+BSkySetHtmlStylingSetting (tableTheme = "kable_styling", tableHeaderBackgroundColor = "", tableOuterBorder = FALSE)
+""")
 
     @staticmethod
     def wrap_with_space(match):
@@ -153,8 +157,7 @@ temp <- tools::Rd2HTML(utils:::.getHelpFile(file), out=file("{self.sinkhtml}", o
             # opening graphics device
             r(f"""{images}(filename='{filename}', width={image_wigth}, height={image_height})""")
             # opening sink file
-            r(f"""BSkySetKableAndRmarkdownFormatting(BSkyKableFormatting = TRUE, BSkyRmarkdownFormatting = FALSE) 
-fp <- file("{self.sinkfile}", open = "wt")
+            r(f"""fp <- file("{self.sinkfile}", open = "wt")
 options("warn" = 1)
 sink(fp)
 sink(fp, type = "message")""")
