@@ -24,7 +24,7 @@ def open(file_path, filetype, wsName, replace_ds, csvHeader, char_to_factor, bas
                     f"sepChar='{csv_sep}', " \
                     f"deciChar='{delim}', " \
                     f"datasetName='{datasetName}')"
-    yield {"message": open_cmd, "name":datasetName, "type": "log"}
+    yield {"message": open_cmd, "name":datasetName, "type": "syntax"}
     robjects.r(open_cmd)
     #print("R cmd executed...")
     for message in getrowcountcolprops(datasetName):
