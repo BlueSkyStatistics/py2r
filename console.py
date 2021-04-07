@@ -20,15 +20,6 @@ class RShell(cmd.Cmd):
         for message in self.r.run(**cmd): 
             print(dumps(message))
     
-    def do_export_html(self, args):
-        args = loads(args)
-        args['cmd'] = args['cmd'].replace("\\", "/")
-        args['cmd'] = f'''rmarkdown::find_pandoc(dir="{environ.get('PANDOC_PATH')}")
-{args['cmd']}'''
-        for message in self.r.run(**args):
-            print(dumps({"message":message, "type": "log"}))
-        print(dumps({"message": "export complete", "type": "log"}))
- 
     def do_rhelp(self, args):
         self.r.rhelp(**loads(args))
 
