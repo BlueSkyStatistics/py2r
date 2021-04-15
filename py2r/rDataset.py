@@ -12,6 +12,8 @@ def openblankdataset(datasetName):
         yield message["message"]
 
 def open(file_path, filetype, wsName, replace_ds, csvHeader, char_to_factor, basket_data, csv_sep, delim, datasetName):
+    if filetype == 'SAV':
+        filetype = 'SPSS'
     open_cmd = f"BSkyloadDataset('{file_path}', " \
                     f"'{filetype}', " \
                     f"worksheetName={wsName}, " \
