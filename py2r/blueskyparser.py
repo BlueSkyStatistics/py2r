@@ -89,8 +89,8 @@ is.null(BSkyQueue)
         rett_type = "console"
         caption = ""
         for index in range(int(data[6][0])):
-            if data[7].names != NULL and data[7].names[index] != "":
-                caption = data[7].names[index]
+            # if data[7].names != NULL and data[7].names[index] != "":
+            #     caption = data[7].names[index]
             if isinstance(data[7][index], vectors.ListVector) and data[7][index][0][0] == "ewtable":
                 message = str(data[7][index])
                 rett_type = "log"
