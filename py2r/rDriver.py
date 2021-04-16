@@ -227,7 +227,7 @@ close(fp)""")
                         object_index += 1
                     else:
                         if line.strip():
-                            output_buffer += f"{line.strip()}\n"
+                            output_buffer += f"{line.rstrip()}\n"
             # Trying to process output if no BSKy format was in place
             # if object_index == 1:
             #     for msg in self.process_message(message, filename, cmd=cmd, eval=eval, 
