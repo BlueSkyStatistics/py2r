@@ -78,13 +78,16 @@ class RShell(cmd.Cmd):
                          "type": "exception",
                          "code": 400}))
 
+    def do_quit(self, args):
+        print(dumps({"message": "Shitting down python backend", "type": "log"}))
+        exit(0)
+
     def do_updatemodal(self, args):
         args = loads(args)
         print(dumps({"args":args, "type": "log"}))
         content = execute_r(args["cmd"], eval=True)
         print(dumps({"content":content[0], "type": "log"}))
         print(dumps({"element_id": args["element_id"], "content": content[0], "type": "modalUpdate"}))
-
 
 
 if __name__ == '__main__':
