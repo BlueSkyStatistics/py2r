@@ -263,6 +263,18 @@ close(fp)""")
                     msg["type"] = "markdown"
                     yield msg
             yield {"message": f"Output buffer: {output_buffer}", "type": "log"}
+        yield {
+                    "message": "",
+                    "caption": "",
+                    "type": "processing_done",
+                    "code": code,
+                    "updateDataSet": updateDataSet,
+                    "name": datasetName,
+                    "cmd": cmd,
+                    "eval": True,
+                    "parent_id": parent_id,
+                    "output_id": output_id
+            }
         # Weird workaround #2 to make ggplot work
         if return_type and return_type == images:
             r("""dev.set(2)
