@@ -73,11 +73,11 @@ BSkyGetPvalueDisplaySetting()
             yield message
     
     @staticmethod
-    def clean(output, cmd):
+    def clean(output):
         out = ''
         for line in output.split("\n"):
             if not any(line.startswith(a) for a in [">", "+"]):
-                out += f'{line}\n'
+                out += f'{line.rstrip()}\n'
         return out
 
     def open(self, file_path=None, datasetName=None, wsName='NULL',
@@ -172,8 +172,8 @@ close(fp)""")
         except ri.RRuntimeError as err:
             code = 400
             return_type = "exception"
-            message = f"SERVER STATE EXCEPTION: \n {format(format_exc())}"
-            yield {"message": str(message), "type": "log"}
+            message = self.clean(f"SERVER STATE EXCEPTION: \n {format(format_exc())}")
+            yield {"message": self.clean(message.split('rpy2.rinterface.RRuntimeError:')[1].strip()), "type": "log"}
             error_message = {"message": str(err),
                 "error": message.split('rpy2.rinterface.RRuntimeError:')[1].strip(),
                 "type": return_type,
@@ -206,7 +206,7 @@ close(fp)""")
                                                "BSkyGraphicsFormatInternalSyncFileMarker", 
                                                "BSkyDataGridRefresh"]):
                         if output_buffer.strip():
-                            for msg in self.process_message(self.clean(output_buffer, sanitized_cmd).strip(), 
+                            for msg in self.process_message(self.clean(output_buffer).strip(), 
                                                             '', cmd=cmd, eval=False, limit=limit, 
                                                             updateDataSet=updateDataSet, datasetName=datasetName, 
                                                             parent_id=parent_id, output_id=output_id, code=code):
@@ -251,7 +251,7 @@ close(fp)""")
                 yield msg
             # processing remaining console outputs
             if output_buffer.strip():
-                for msg in self.process_message(self.clean(output_buffer, sanitized_cmd).strip(), '', 
+                for msg in self.process_message(self.clean(output_buffer).strip(), '', 
                                                 cmd=cmd, eval=False, 
                                                 limit=limit, updateDataSet=updateDataSet, 
                                                 datasetName=datasetName, parent_id=parent_id, 
