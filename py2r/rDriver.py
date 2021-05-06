@@ -74,13 +74,6 @@ BSkyGetPvalueDisplaySetting()
     
     @staticmethod
     def clean(output, cmd):
-        # output = output.replace("\n+     ", "")
-        # for line in cmd.split('\n'):
-        #     if line and line in output:
-        #         if line.strip().endswith(";"):
-        #             line = line.strip()[:-1]
-        #         output = output.replace(f'> {line.strip()}\n', '')
-        # return output
         out = ''
         for line in output.split("\n"):
             if not any(line.startswith(a) for a in [">", "+"]):
@@ -148,6 +141,7 @@ temp <- tools::Rd2HTML(utils:::.getHelpFile(file), out=file("{self.sinkhtml}", o
 
     def run(self, cmd, eval=True, limit=20, updateDataSet=False, datasetName=None, 
             parent_id=None, output_id=None, test=False):
+        error_message = None
         code = 200
         return_type = None
         sanitized_cmd = self.wrapRcommand(cmd, datasetName)
@@ -180,7 +174,8 @@ close(fp)""")
             return_type = "exception"
             message = f"SERVER STATE EXCEPTION: \n {format(format_exc())}"
             yield {"message": str(message), "type": "log"}
-            yield {"message": str(err),
+            error_message = {"message": str(err),
+                "error": message.split('rpy2.rinterface.RRuntimeError:')[1].strip(),
                 "type": return_type,
                 "code": code,
                 "updateDataSet": False,
@@ -197,7 +192,8 @@ close(fp)""")
             yield {"message": str(message), "type": "log"}
         finally:
             r("""dev.off()""")
-        if code == 200 and not test:
+        if code != 500 and not test:
+            code = 200
             output_buffer = ""
             object_index = 1
             image_index = 1
@@ -259,22 +255,25 @@ close(fp)""")
                                                 cmd=cmd, eval=False, 
                                                 limit=limit, updateDataSet=updateDataSet, 
                                                 datasetName=datasetName, parent_id=parent_id, 
-                                                output_id=output_id, code=code):
+                                                output_id=output_id, code=code, 
+                                                error_message=error_message):
                     msg["type"] = "markdown"
                     yield msg
             yield {"message": f"Output buffer: {output_buffer}", "type": "log"}
+        if error_message:
+            yield error_message
         yield {
-                    "message": "",
-                    "caption": "",
-                    "type": "processing_done",
-                    "code": code,
-                    "updateDataSet": updateDataSet,
-                    "name": datasetName,
-                    "cmd": cmd,
-                    "eval": True,
-                    "parent_id": parent_id,
-                    "output_id": output_id
-            }
+            "message": "",
+            "caption": "",
+            "type": "processing_done",
+            "code": code,
+            "updateDataSet": updateDataSet,
+            "name": datasetName,
+            "cmd": cmd,
+            "eval": True,
+            "parent_id": parent_id,
+            "output_id": output_id
+        }
         # Weird workaround #2 to make ggplot work
         if return_type and return_type == images:
             r("""dev.set(2)
@@ -282,10 +281,12 @@ dev.off()""")
 
 
     def process_message(self, message, filename, cmd='', eval=True, limit=20, updateDataSet=False, 
-                        datasetName=None, parent_id=None, output_id=None, code=200):
+                        datasetName=None, parent_id=None, output_id=None, code=200, error_message=None):
         if str(message) and message != ri.NULL:
             if not str2bool(eval):
                 message = str(message)
+                if error_message:
+                    message = message.replace(error_message['error'], '')
                 return_type = 'console'
             elif message and str(message):
                 message, return_type = convert_to_data(message, limit)
