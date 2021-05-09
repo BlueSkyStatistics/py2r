@@ -66,7 +66,8 @@ BSkyGetPvalueDisplaySetting()
                     cmd += f"{each.strip()}\n"
                 else:
                     cmd += f" {each.strip()}\n"
-        return cmd.strip()
+        stringif = cmd.strip().replace('"','\\"')
+        return cmd.strip(), f'"{stringif}"'
 
     def openblankds(self, datasetName='Dataset1'):
         for message in ds.openblankdataset(datasetName):
@@ -144,10 +145,10 @@ temp <- tools::Rd2HTML(utils:::.getHelpFile(file), out=file("{self.sinkhtml}", o
         error_message = None
         code = 200
         return_type = None
-        sanitized_cmd = self.wrapRcommand(cmd, datasetName)
+        sanitized_cmd, stringified = self.wrapRcommand(cmd, datasetName)
         filename = "/".join([self.tmpdir, f"{randomString()}%03d.{images}"])
         filename = filename.replace("\\", "/")
-        yield {"message": sanitized_cmd, "type": "log"}
+        yield {"message": stringified, "type": "log"}
         try:
             # opening graphics device
             r(f"""{images}(filename='{filename}', width={image_wigth}, height={image_height})""")
@@ -159,10 +160,15 @@ sink(fp, type = "message")""")
             # Executing R
             message=r(f"""
 dev.set(2)
-withAutoprint({{
-{sanitized_cmd}
-}}, deparseCtrl=c("keepInteger", "showAttributes", "keepNA"), keep.source=TRUE)
-""")
+ll=parse(text={stringified})
+for (i in seq_along(ll)) {{
+    tryCatch(
+        {{eval(ll[[i]])}}, 
+        error = function(e) message("Error: ", as.character(e))
+    )
+}}
+"""
+)
             # closing sink file
             r("""sink(type = "message")
 sink()
