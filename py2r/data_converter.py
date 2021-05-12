@@ -1,6 +1,9 @@
 from math import isnan
 from rpy2.rinterface import NULL as NULL
-from rpy2.rinterface import NAIntegerType
+try:
+    from rpy2.rinterface import NAIntegerType
+except:
+    from rpy2.rinterface import NA_Integer as NAIntegerType
 
 from py2r.config import rtypes, max_columns
 

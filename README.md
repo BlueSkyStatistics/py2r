@@ -1,29 +1,19 @@
-### Requirements
-- [R 3.x](https://cran.r-project.org/bin/windows/base/old/) Better to install from CRAN than from Brew, as brew is limited version
-- [python3.7](https://www.python.org/downloads/release/python-374/)
-- [rpy2](https://rpy2.bitbucket.io) (may be complicated to install on Windows)
-- [pip](https://pip.pypa.io/en/stable/installing/) (Make sure you installing it for python3)
+# INSTALLAION
 
-Within Python world it is recommended to use [virtual environment](https://docs.python.org/3/tutorial/venv.html) for development. Please consider using it to make your code transferable. 
+Curenly we are running on latest version of rpy2
 
-##### Running Backend
+## Environment variables required to work:
+- "R_HOME" - path to R folder
+- "R_HOME_DIR" - same as R_HOME, but required by R executable
 
-_NOTE: This is Python3.7 project with legacy `rpy2==2.9.5` which is the latest version installable on Windows_
+## Mac
 
-To run it you need install requirements using `pip`. Within the `py2rbackend` folder run: 
+### Installation
+1. Python 3.7 - 3.8
+2. Activate [venv](https://docs.python.org/3/library/venv.html) to play safe
+3. install rpy2 `pip install rpy2==3.4.4`
+4. For distribution you'd need to install pyinstaller `pip install pyinstaller`
 
-```bash
-pip3 install -r requirements.txt
-```
+### Distribution
+Run `./venv/bin/pyinstaller console.spec` it will build executable `RConsole` in `dist` folder
 
-there are number of environment variables required to make it work - `PYTHONPATH, R_HOME, R_USER`
-
-installation of requirements done only once.
-
-Then to run enter `python3 console.py`. 
-
-This is pretty much it now type into console something like
-```bash
-r {"cmd":"pi","eval": false}
-```
-and get a ton of R things in return!

@@ -9,6 +9,10 @@ from sys import platform
 
 
 import rpy2.rinterface as ri
+try:
+    from rpy2.rinterface_lib.embedded import RRuntimeError
+except:
+    from rpy2.rinterface import RRuntimeError
 import rpy2.robjects as robjects
 import rpy2.robjects.vectors as vectors
 from rpy2.robjects.packages import importr
@@ -158,12 +162,12 @@ options("warn" = 1)
 sink(fp)
 sink(fp, type = "message")""")
             # Executing R
-            message=r(f"""
+            r(f"""
 dev.set(2)
 ll=parse(text={stringified})
 for (i in seq_along(ll)) {{
     tryCatch(
-        {{eval(ll[[i]])}}, 
+        withAutoprint({{eval(ll[[i]])}}, deparseCtrl=c("keepInteger", "showAttributes", "keepNA"), keep.source=TRUE), 
         error = function(e) message("Error: ", as.character(e))
     )
 }}
@@ -175,13 +179,13 @@ sink()
 flush(fp)
 close(fp)""")
             # turning off graphical device
-        except ri.RRuntimeError as err:
+        except RRuntimeError as err:
             code = 400
             return_type = "exception"
             message = self.clean(f"SERVER STATE EXCEPTION: \n {format(format_exc())}")
-            yield {"message": self.clean(message.split('rpy2.rinterface.RRuntimeError:')[1].strip()), "type": "log"}
+            yield {"message": self.clean(message.split('.RRuntimeError:')[1].strip()), "type": "log"}
             error_message = {"message": str(err),
-                "error": message.split('rpy2.rinterface.RRuntimeError:')[1].strip(),
+                "error": message.split('.RRuntimeError:')[1].strip(),
                 "type": return_type,
                 "code": code,
                 "updateDataSet": False,
