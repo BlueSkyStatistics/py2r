@@ -49,7 +49,7 @@ class RDriver:
         importr("kableExtra")
         r("""BSkySetKableAndRmarkdownFormatting(BSkyKableFormatting = TRUE, BSkyRmarkdownFormatting = FALSE)
 BSkySetHtmlStylingSetting ()
-BSkySetHtmlStylingSetting (tableTheme = "kable_styling", tableHeaderBackgroundColor = "", tableOuterBorder = FALSE)
+BSkySetHtmlStylingSetting (tableTheme = "kable_styling", tableHeaderBackgroundColor = "", tableOuterBorder = FALSE, columHeaderScrollFixed = TRUE)
 BSkyGetPvalueDisplaySetting()
 """)
 
