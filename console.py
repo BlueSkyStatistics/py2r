@@ -84,9 +84,9 @@ class RShell(cmd.Cmd):
 
     def do_updatemodal(self, args):
         args = loads(args)
-        print(dumps({"args": args, "type": "log"}))
+        # print(dumps({"args": args, "type": "log"}))
         content = execute_r(args["cmd"], eval=True)
-        print(dumps({"content":content[0], "type": "log"}))
+        # print(dumps({"content":content[0], "type": "log"}))
         print(dumps({"element_id": args["element_id"], "content": content[0], "type": "modalUpdate"}))
 
 

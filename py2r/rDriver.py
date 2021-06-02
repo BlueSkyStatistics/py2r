@@ -152,7 +152,7 @@ temp <- tools::Rd2HTML(utils:::.getHelpFile(file), out=file("{self.sinkhtml}", o
         sanitized_cmd, stringified = self.wrapRcommand(cmd, datasetName)
         filename = "/".join([self.tmpdir, f"{randomString()}%03d.{images}"])
         filename = filename.replace("\\", "/")
-        yield {"message": stringified, "type": "log"}
+        # yield {"message": stringified, "type": "log"}
         try:
             # opening graphics device
             r(f"""{images}(filename='{filename}', width={image_wigth}, height={image_height})""")
@@ -269,7 +269,8 @@ close(fp)""")
                                                 error_message=error_message):
                     msg["type"] = "markdown"
                     yield msg
-            yield {"message": f"Output buffer: {output_buffer}", "type": "log"}
+            if "Error:" in output_buffer:
+                yield {"message": f"Output buffer: {output_buffer}", "type": "log"}
         if error_message:
             yield error_message
         yield {
