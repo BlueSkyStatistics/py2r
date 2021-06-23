@@ -30,7 +30,7 @@ class RDriver:
     if 'win' not in platform or 'darwin' in platform:
         tmpdir = gettempdir()
     else:
-        tmpdir = gettempdir() # not working in windows -> environ.get('TMP', environ.get('TEMP', ""))
+        tmpdir = environ.get('TMP', environ.get('TEMP', gettempdir()))
     sinkfile = path.join(tmpdir, 'sink.txt')
     sinkhtml = path.join(tmpdir, 'help.html')
     sinkfile = sinkfile.replace("\\", "/")
