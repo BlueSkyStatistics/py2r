@@ -4,7 +4,7 @@ from rpy2 import robjects
 from py2r.rUtils import execute_r
 
 def openblankdataset(datasetName):
-    open_cmd = f"BSkyOpenNewDataset(datasetName='{datasetName}', noOfRows=80,noOfCols=50)" 
+    open_cmd = f"BSkyOpenNewDataset(datasetName='{datasetName}', noOfRows=80,noOfCols=15)" 
     yield {"message": open_cmd, "name":datasetName, "type": "log"}
     robjects.r(open_cmd)
     #print("R cmd executed...")
