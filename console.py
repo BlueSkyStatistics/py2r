@@ -1,5 +1,6 @@
 import cmd
 from os import environ
+from sys import exit
 from json import loads, dumps, decoder
 from traceback import format_exc
 from py2r.rDriver import RDriver
