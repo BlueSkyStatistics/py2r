@@ -19,7 +19,7 @@ class RShell(cmd.Cmd):
         cmd = loads(self._cmd)
         self._cmd = ''
         for message in self.r.run(**cmd): 
-            print(dumps(message))
+            print(dumps(message, ensure_ascii=False))
     
     def do_rhelp(self, args):
         self.r.rhelp(**loads(args))
@@ -32,18 +32,18 @@ class RShell(cmd.Cmd):
                     message["count"] = message_order
                     message_order += 1
                 try:
-                    print(dumps(message))
+                    print(dumps(message, ensure_ascii=False))
                 except TypeError:
-                    print(dumps({"message": str(message), "type": "exception"}))
+                    print(dumps({"message": str(message), "type": "exception"}, ensure_ascii=False))
         except:
-            print(dumps({"message": f"CLIENT_EXCEPTION (run): unexpected command format {args}: exception: {format_exc()}",
+            print(dumps({"message": f"CLIENT_EXCEPTION (run): unexpected command format {args.encode('utf8')}: exception: {format_exc()}",
                          "type": "exception",
                          "code": 400}))
 
     def do_openblankds(self, args):
         try:
             for message in self.r.openblankds(**loads(args)):
-                print(dumps(message))
+                print(dumps(message, ensure_ascii=False))
         except decoder.JSONDecodeError:
             print(dumps({"message": f"CLIENT_EXCEPTION (open): unexpected command format {args}",
                          "type": "exception",
@@ -64,20 +64,29 @@ class RShell(cmd.Cmd):
         """
         try:
             for message in self.r.open(**loads(args)):
-                print(dumps(message))
+                print(dumps(message, ensure_ascii=False))
         except decoder.JSONDecodeError:
             print(dumps({"message": f"CLIENT_EXCEPTION (open): unexpected command format {args}",
                          "type": "exception",
                          "code": 400}))
+        except Exception:
+            print(dumps({"message": f"DATA_EXCEPTION (open): {format_exc()}",
+                         "type": "exception",
+                         "code": 500}))
+
     
     def do_refresh(self, args):
         try:
             for message in self.r.refresh(**loads(args)):
-                print(dumps(message))
+                print(dumps(message, ensure_ascii=False))
         except decoder.JSONDecodeError:
             print(dumps({"message": f"CLIENT_EXCEPTION (refresh): unexpected command format {args}",
                          "type": "exception",
                          "code": 400}))
+        except Exception:
+            print(dumps({"message": f"DATA_EXCEPTION (refresh): {format_exc()}",
+                         "type": "exception",
+                         "code": 500}))
 
     def do_quit(self, args):
         print(dumps({"message": "Shitting down python backend", "type": "log"}))
@@ -85,10 +94,8 @@ class RShell(cmd.Cmd):
 
     def do_updatemodal(self, args):
         args = loads(args)
-        # print(dumps({"args": args, "type": "log"}))
         content = execute_r(args["cmd"], eval=True)
-        # print(dumps({"content":content[0], "type": "log"}))
-        print(dumps({"element_id": args["element_id"], "content": content[0], "type": "modalUpdate"}))
+        print(dumps({"element_id": args["element_id"], "content": content[0], "type": "modalUpdate"}, ensure_ascii=False))
 
 
 if __name__ == '__main__':
