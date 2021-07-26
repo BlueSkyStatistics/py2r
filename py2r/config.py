@@ -26,7 +26,7 @@ rtypes = {
 
 max_columns = 10
 images = 'svg'
-empty_image_size = 250 
+empty_image_size = 350 
 image_wigth = 10 
 image_height = 6 
 image_name = 'image'

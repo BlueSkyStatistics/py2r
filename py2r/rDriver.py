@@ -31,6 +31,7 @@ class RDriver:
         tmpdir = gettempdir()
     else:
         tmpdir = environ.get('TMP', environ.get('TEMP', gettempdir()))
+    tmpdir = tmpdir.replace("\\", "/")
     sinkfile = path.join(tmpdir, 'sink.txt')
     sinkhtml = path.join(tmpdir, 'help.html')
     sinkfile = sinkfile.replace("\\", "/")
@@ -47,11 +48,13 @@ class RDriver:
         importr("foreign")
         importr("BlueSky")
         importr("kableExtra")
-        r("""BSkySetKableAndRmarkdownFormatting(BSkyKableFormatting = TRUE, BSkyRmarkdownFormatting = FALSE)
+        r(f'''BSkySetGraphicsDirPath("{self.tmpdir}")
+BSkySetRCommandDisplaySetting(echo = FALSE, echoInline = FALSE)
+BSkySetKableAndRmarkdownFormatting(BSkyKableFormatting = TRUE, BSkyRmarkdownFormatting = FALSE)
 BSkySetHtmlStylingSetting ()
 BSkySetHtmlStylingSetting (tableTheme = "kable_styling", tableHeaderBackgroundColor = "", tableOuterBorder = FALSE, columHeaderScrollFixed = TRUE)
 BSkyGetPvalueDisplaySetting()
-""")
+''')
 
     @staticmethod
     def wrap_with_space(match):
@@ -145,7 +148,7 @@ temp <- tools::Rd2HTML(utils:::.getHelpFile(file), out=file("{self.sinkhtml}", o
         return "Done"
 
     def run(self, cmd, eval=True, limit=20, updateDataSet=False, datasetName=None, 
-            parent_id=None, output_id=None, test=False):
+            parent_id=None, output_id=None, test=False, splitIgnore='FALSE'):
         error_message = None
         code = 200
         return_type = None
@@ -164,13 +167,7 @@ sink(fp, type = "message")""")
             # Executing R
             r(f"""
 dev.set(2)
-ll=parse(text={stringified})
-for (i in seq_along(ll)) {{
-    tryCatch(
-        withAutoprint({{eval(ll[[i]])}}, deparseCtrl=c("keepInteger", "showAttributes", "keepNA"), keep.source=TRUE), 
-        error = function(e) message("Error: ", as.character(e))
-    )
-}}
+BSkyEvalRcommand(RcommandString = {stringified}, currentDatasetName = "{datasetName}", ignoreSplitOn = {splitIgnore})
 """
 )
             # closing sink file
@@ -226,10 +223,11 @@ close(fp)""")
                         for msg in bsky.bskyformat_parser(cmd=cmd, limit=limit, 
                                                           updateDataSet=updateDataSet, datasetName=datasetName, 
                                                           parent_id=parent_id, output_id=output_id, code=code, 
-                                                          filename=filename, object_index=object_index):
+                                                          filename=filename, object_index=object_index, image_index=image_index):
                             if msg["type"] == images:
                                 return_type = msg["type"]
-                                image_index += 1
+                                image_index = msg['image_index'] + 1
+                                del msg['image_index']
                             yield msg
                         object_index += 1
                     else:
@@ -245,15 +243,19 @@ close(fp)""")
             #         if msg["message"]:
             #             yield msg
             # Process remaining bskyformats
-            for msg in bsky.bskyformat_parser(cmd=cmd, limit=limit, updateDataSet=updateDataSet, datasetName=datasetName, parent_id=parent_id, output_id=output_id, code=code, filename=filename, object_index=object_index, till_the_end=True):
+            for msg in bsky.bskyformat_parser(cmd=cmd, limit=limit, updateDataSet=updateDataSet, 
+                                              datasetName=datasetName, parent_id=parent_id, output_id=output_id, 
+                                              code=code, filename=filename, object_index=object_index, 
+                                              image_index=image_index, till_the_end=True):
                 if msg["type"] == images:
                     return_type = msg["type"]
-                    image_index += 1
+                    image_index = msg['image_index'] + 1
+                    del msg['image_index']
                 yield msg
             # Adding remaining images
             for msg in bsky.process_images(cmd=cmd, datasetName=datasetName, parent_id=parent_id, 
-                                            output_id=output_id, code=code, filename=filename, 
-                                            image_index=image_index):
+                                           output_id=output_id, code=code, filename=filename, 
+                                           image_index=image_index):
                 if "type" in msg:
                     return_type = msg["type"]
                 else:

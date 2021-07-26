@@ -45,9 +45,13 @@ class RShell(cmd.Cmd):
             for message in self.r.openblankds(**loads(args)):
                 print(dumps(message, ensure_ascii=False))
         except decoder.JSONDecodeError:
-            print(dumps({"message": f"CLIENT_EXCEPTION (open): unexpected command format {args}",
+            print(dumps({"message": f"CLIENT_EXCEPTION (openblank): unexpected command format {args}",
                          "type": "exception",
                          "code": 400}))
+        except:
+            print(dumps({"message": f"CLIENT_EXCEPTION (openblank): unexpected command format {args.encode('utf8')}: exception: {format_exc()}",
+                         "type": "exception",
+                         "code": 500}))
                          
     def do_open(self, args):
         """
