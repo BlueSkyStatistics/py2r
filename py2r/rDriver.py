@@ -49,7 +49,7 @@ class RDriver:
         importr("BlueSky")
         importr("kableExtra")
         r(f'''BSkySetGraphicsDirPath("{self.tmpdir}")
-BSkySetRCommandDisplaySetting(echo = FALSE, echoInline = FALSE)
+BSkySetRCommandDisplaySetting(echo = TRUE, echoInline = TRUE)
 BSkySetKableAndRmarkdownFormatting(BSkyKableFormatting = TRUE, BSkyRmarkdownFormatting = FALSE)
 BSkySetHtmlStylingSetting ()
 BSkySetHtmlStylingSetting (tableTheme = "kable_styling", tableHeaderBackgroundColor = "", tableOuterBorder = FALSE, columHeaderScrollFixed = TRUE)
@@ -148,7 +148,7 @@ temp <- tools::Rd2HTML(utils:::.getHelpFile(file), out=file("{self.sinkhtml}", o
         return "Done"
 
     def run(self, cmd, eval=True, limit=20, updateDataSet=False, datasetName=None, 
-            parent_id=None, output_id=None, test=False, splitIgnore='FALSE'):
+            parent_id=None, output_id=None, test=False, splitIgnore='FALSE', echo='TRUE', echoInline='TRUE'):
         error_message = None
         code = 200
         return_type = None
@@ -167,7 +167,7 @@ sink(fp, type = "message")""")
             # Executing R
             r(f"""
 dev.set(2)
-BSkyEvalRcommand(RcommandString = {stringified}, currentDatasetName = "{datasetName}", ignoreSplitOn = {splitIgnore})
+BSkyEvalRcommand(RcommandString = {stringified}, currentDatasetName = "{datasetName}", ignoreSplitOn = {splitIgnore}, echo = {echo}, echoInline = {echoInline})
 """
 )
             # closing sink file
