@@ -48,6 +48,7 @@ class RDriver:
         importr("foreign")
         importr("BlueSky")
         importr("kableExtra")
+        r("require('formatR')")
         r(f'''BSkySetGraphicsDirPath("{self.tmpdir}")
 BSkySetRCommandDisplaySetting(echo = TRUE, echoInline = TRUE)
 BSkySetKableAndRmarkdownFormatting(BSkyKableFormatting = TRUE, BSkyRmarkdownFormatting = FALSE)

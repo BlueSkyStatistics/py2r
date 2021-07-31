@@ -51,3 +51,4 @@ install.packages(c('xtable', 'xts', 'yaml', 'zeallot', 'zip', 'zoo', 'kableExtra
 install.packages("https://cran.r-project.org/bin/macosx/el-capitan/contrib/3.6/foreign_0.8-76.tgz")
 
 # V18, logicFS
+install.packages(c('formatR'), repos = 'http://cran.us.r-project.org', type = "both")
