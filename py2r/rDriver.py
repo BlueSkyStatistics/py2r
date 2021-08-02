@@ -56,6 +56,7 @@ BSkySetHtmlStylingSetting ()
 BSkySetHtmlStylingSetting (tableTheme = "kable_styling", tableHeaderBackgroundColor = "", tableOuterBorder = FALSE, columHeaderScrollFixed = TRUE)
 BSkyGetPvalueDisplaySetting()
 ''')
+        yield {"message": "started", "type": "rinfo"}
 
     @staticmethod
     def wrap_with_space(match):

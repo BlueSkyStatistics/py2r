@@ -13,7 +13,8 @@ class RShell(cmd.Cmd):
         super().__init__(*args, **kwargs)
         self._cmd = ''
         self.r = RDriver()
-        self.r.initiate_libs()
+        for message in self.r.initiate_libs():
+            print(dumps(message, ensure_ascii=False))
 
     def emptyline(self):
         cmd = loads(self._cmd)
