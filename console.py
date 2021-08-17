@@ -14,7 +14,8 @@ class RShell(cmd.Cmd):
         self._cmd = ''
         self.r = RDriver()
         for message in self.r.initiate_libs():
-            print(dumps(message, ensure_ascii=False))
+            print(dumps(message))
+        print(dumps({"message": "initialized", "type": "init_done"}))
 
     def emptyline(self):
         cmd = loads(self._cmd)
