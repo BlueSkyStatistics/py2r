@@ -144,10 +144,12 @@ dev.off()
 dev.off()""")
 
     def rhelp(self, cmd):
-        res = r(f"""file <- {cmd}
+        res = r(f"""fp = file("{self.sinkhtml}", open = "wt")
+file <- {cmd}
 pkgname <- basename(dirname(dirname(file)))
-temp <- tools::Rd2HTML(utils:::.getHelpFile(file), out=file("{self.sinkhtml}", open = "wt"), package = pkgname)""")
+temp <- tools::Rd2HTML(utils:::.getHelpFile(file), out=fp, package = pkgname)""")
         webbrowser.open(f"file://{self.sinkhtml}", new=2)
+        r("""close(fp)""")
         return "Done"
 
     def run(self, cmd, eval=True, limit=20, updateDataSet=False, datasetName=None, 
