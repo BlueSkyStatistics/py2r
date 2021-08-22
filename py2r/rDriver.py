@@ -258,14 +258,14 @@ close(fp)""")
                     del msg['image_index']
                 yield msg
             # Adding remaining images
-            for msg in bsky.process_images(cmd=cmd, datasetName=datasetName, parent_id=parent_id, 
-                                           output_id=output_id, code=code, filename=filename, 
-                                           image_index=image_index):
-                if "type" in msg:
-                    return_type = msg["type"]
-                else:
-                    return_type = "Close device"
-                yield msg
+            # for msg in bsky.process_images(cmd=cmd, datasetName=datasetName, parent_id=parent_id, 
+            #                                output_id=output_id, code=code, filename=filename, 
+            #                                image_index=image_index):
+            #     if "type" in msg:
+            #         return_type = msg["type"]
+            #     else:
+            #         return_type = "Close device"
+            #     yield msg
             # processing remaining console outputs
             if output_buffer.strip():
                 for msg in self.process_message(self.clean(output_buffer).strip(), '', 
