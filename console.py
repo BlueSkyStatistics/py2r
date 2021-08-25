@@ -24,7 +24,15 @@ class RShell(cmd.Cmd):
             print(dumps(message, ensure_ascii=False))
     
     def do_rhelp(self, args):
-        self.r.rhelp(**loads(args))
+        try:
+            self.r.rhelp(**loads(args))
+        except:
+            print(dumps(
+                {
+                    "message": "R Environment error",
+                    "error": format_exc().split('.RRuntimeError:')[1].strip(),
+                    "type": "error_dialog"
+                }, ensure_ascii=False))
 
     def do_r(self, args):
         message_order = 0
