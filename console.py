@@ -101,7 +101,11 @@ class RShell(cmd.Cmd):
     def do_updatemodal(self, args):
         args = loads(args)
         content = execute_r(args["cmd"], eval=True)
-        print(dumps({"element_id": args["element_id"], "content": content[0], "type": "modalUpdate"}, ensure_ascii=False))
+        if content[1] == 'NILSXP':
+            content = ""
+        else:
+            content = content[0]
+        print(dumps({"element_id": args["element_id"], "content": content, "type": "modalUpdate"}, ensure_ascii=False))
 
 
 if __name__ == '__main__':
