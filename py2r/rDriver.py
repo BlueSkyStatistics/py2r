@@ -153,7 +153,8 @@ temp <- tools::Rd2HTML(utils:::.getHelpFile(file), out=fp, package = pkgname)"""
         return "Done"
 
     def run(self, cmd, eval=True, limit=20, updateDataSet=False, datasetName=None, 
-            parent_id=None, output_id=None, test=False, splitIgnore='FALSE', echo='TRUE', echoInline='TRUE'):
+            parent_id=None, output_id=None, test=False, splitIgnore='FALSE', 
+            echo='TRUE', echoInline='TRUE', imagesType=images, plotHeight=image_height, plotWidth=image_wigth):
         error_message = None
         code = 200
         return_type = None
@@ -161,9 +162,14 @@ temp <- tools::Rd2HTML(utils:::.getHelpFile(file), out=fp, package = pkgname)"""
         filename = "/".join([self.tmpdir, f"{randomString()}%03d.{images}"])
         filename = filename.replace("\\", "/")
         # yield {"message": stringified, "type": "log"}
+        if imagesType == 'svg' and plotHeight > 100 and plotWidth > 100:
+            plotHeight = plotHeight / 100
+            plotWidth = plotWidth / 100
+        plotWidth = plotWidth if plotWidth > 1 else 1
+        plotHeight = plotHeight if plotHeight > 1 else 1
         try:
             # opening graphics device
-            r(f"""{images}(filename='{filename}', width={image_wigth}, height={image_height})""")
+            r(f"""{imagesType}(filename='{filename}', width={plotWidth}, height={plotHeight})""")
             # opening sink file
             r(f"""fp <- file("{self.sinkfile}", open = "wt")
 options("warn" = 1)
