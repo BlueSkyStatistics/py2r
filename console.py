@@ -27,8 +27,7 @@ class RShell(cmd.Cmd):
         try:
             self.r.rhelp(**loads(args))
         except:
-            print(dumps(
-                {
+            print(dumps({
                     "message": "R Environment error",
                     "error": format_exc().split('.RRuntimeError:')[1].strip(),
                     "type": "error_dialog"
