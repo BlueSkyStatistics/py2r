@@ -155,8 +155,7 @@ temp <- tools::Rd2HTML(utils:::.getHelpFile(file), out=fp, package = pkgname)"""
     def run(self, cmd, eval=True, limit=20, updateDataSet=False, datasetName=None, 
             parent_id=None, output_id=None, test=False, splitIgnore='FALSE', 
             echo='TRUE', echoInline='TRUE', imagesType=images, plotHeight=image_height, 
-            plotWidth=image_wigth,
-            log_command=False):
+            plotWidth=image_wigth, log_command=False):
         error_message = None
         code = 200
         return_type = None

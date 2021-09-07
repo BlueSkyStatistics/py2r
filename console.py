@@ -113,11 +113,13 @@ class RShell(cmd.Cmd):
                 content = ""
             else:
                 content = content[0]
-            print(dumps({"element_id": args["element_id"], "content": content, "type": "modalUpdate"}, ensure_ascii=False))
         except Exception:
-            print(dumps({"message": f"DATA_EXCEPTION (do_updatemodal): {format_exc()}",
+            print(dumps({"message": f"DATA_EXCEPTION (do_updatemodal): {format_exc()}\n command: {args['cmd']}",
                          "type": "exception",
                          "code": 500}))
+            content = ""
+        print(dumps({"element_id": args["element_id"], "content": content, "type": "modalUpdate"}, ensure_ascii=False))
+
 
 
 if __name__ == '__main__':
