@@ -155,7 +155,8 @@ temp <- tools::Rd2HTML(utils:::.getHelpFile(file), out=fp, package = pkgname)"""
     def run(self, cmd, eval=True, limit=20, updateDataSet=False, datasetName=None, 
             parent_id=None, output_id=None, test=False, splitIgnore='FALSE', 
             echo='TRUE', echoInline='TRUE', imagesType=images, plotHeight=image_height, 
-            plotWidth=image_wigth, log_command=False):
+            plotWidth=image_wigth, log_command=False, 
+            numExpr=-1, startPosition=-1, endPosition=-1):
         error_message = None
         code = 200
         return_type = None
@@ -180,7 +181,7 @@ sink(fp, type = "message")""")
             # Executing R
             r(f"""
 dev.set(2)
-BSkyEvalRcommand(RcommandString = {stringified}, currentDatasetName = "{datasetName}", ignoreSplitOn = {splitIgnore}, echo = {echo}, echoInline = {echoInline})
+BSkyEvalRcommand(RcommandString = {stringified}, currentDatasetName = "{datasetName}", ignoreSplitOn = {splitIgnore}, echo = {echo}, echoInline = {echoInline}, numExprParse = {numExpr}, selectionStartpos = {startPosition}, selectionEndpos = {endPosition})
 """
 )
             # closing sink file
