@@ -66,16 +66,16 @@ BSkyGetPvalueDisplaySetting()
     def wrapRcommand(self, cmd, dataset_name):
         if "%ds" in cmd:
             cmd = cmd.replace("%ds", dataset_name)
-        cmd_arr = cmd.split("\n")
-        cmd = ''
-        for each in cmd_arr:
-            if any(each.strip().endswith(a) for a in [",", "+", "%>%"]):
-                cmd += f" {each.strip()}"
-            else: 
-                if cmd.endswith("\n"):
-                    cmd += f"{each.strip()}\n"
-                else:
-                    cmd += f" {each.strip()}\n"
+        # cmd_arr = cmd.split("\n")
+        # cmd = ''
+        # for each in cmd_arr:
+        #     if any(each.strip().endswith(a) for a in [",", "+", "%>%"]):
+        #         cmd += f" {each.strip()}"
+        #     else: 
+        #         if cmd.endswith("\n"):
+        #             cmd += f"{each.strip()}\n"
+        #         else:
+        #             cmd += f" {each.strip()}\n"
         stringif = cmd.strip().replace('"','\\"')
         return cmd.strip(), f'"{stringif}"'
 
@@ -161,6 +161,7 @@ temp <- tools::Rd2HTML(utils:::.getHelpFile(file), out=fp, package = pkgname)"""
         code = 200
         return_type = None
         sanitized_cmd, stringified = self.wrapRcommand(cmd, datasetName)
+        yield {"message": stringified, "type": "log"}
         filename = "/".join([self.tmpdir, f"{randomString()}%03d.{images}"])
         filename = filename.replace("\\", "/")
         if log_command:
