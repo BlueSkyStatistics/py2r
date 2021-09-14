@@ -154,18 +154,19 @@ temp <- tools::Rd2HTML(utils:::.getHelpFile(file), out=fp, package = pkgname)"""
 
     def run(self, cmd, eval=True, limit=20, updateDataSet=False, datasetName=None, 
             parent_id=None, output_id=None, test=False, splitIgnore='FALSE', 
-            echo='TRUE', echoInline='TRUE', imagesType=images, plotHeight=image_height, 
-            plotWidth=image_wigth, log_command=False, 
-            numExpr=-1, startPosition=-1, endPosition=-1):
+            echo='TRUE', echoInline='TRUE', imagesType=images, 
+            plotHeight=image_height, plotWidth=image_wigth, 
+            log_command=False, numExpr=-1, startPosition=-1, endPosition=-1, jumpCursor=False):
         error_message = None
         code = 200
         return_type = None
         sanitized_cmd, stringified = self.wrapRcommand(cmd, datasetName)
-        yield {"message": stringified, "type": "log"}
         filename = "/".join([self.tmpdir, f"{randomString()}%03d.{images}"])
         filename = filename.replace("\\", "/")
         if log_command:
             yield {"message": stringified, "type": "log"}
+            if startPosition > 0 or endPosition > 0:
+                yield {"message": f"Shrinked command: {stringified[startPosition:endPosition]}", "type": "log"}
         if imagesType == 'svg' and plotHeight > 100 and plotWidth > 100:
             plotHeight = plotHeight / 100
             plotWidth = plotWidth / 100
@@ -180,7 +181,7 @@ options("warn" = 1)
 sink(fp)
 sink(fp, type = "message")""")
             # Executing R
-            r(f"""
+            res = r(f"""
 dev.set(2)
 BSkyEvalRcommand(RcommandString = {stringified}, currentDatasetName = "{datasetName}", ignoreSplitOn = {splitIgnore}, echo = {echo}, echoInline = {echoInline}, numExprParse = {numExpr}, selectionStartpos = {startPosition}, selectionEndpos = {endPosition})
 """
@@ -191,6 +192,11 @@ sink()
 flush(fp)
 close(fp)""")
             # turning off graphical device
+            if jumpCursor:
+                try:
+                    yield {"position": int(res[4][0]), "type":"jumpCursor"}
+                except:
+                    yield {"message": f"Jump cursor failed due to {format(format_exc())}", "type":"log"}
         except RRuntimeError as err:
             code = 400
             return_type = "exception"

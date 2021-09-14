@@ -47,7 +47,7 @@ install.packages(c('tidyselect', 'tidyverse', 'tigris', 'timeDate', 'timeSeries'
 install.packages(c('tseries', 'TSP', 'units', 'UpSetR', 'urca', 'utf8'), repos = 'http://cran.us.r-project.org', type = "both")
 install.packages(c('uuid', 'vcd', 'vctrs', 'VIM', 'viridis', 'viridisLite', 'visdat', 'visNetwork', 'visreg'), repos = 'http://cran.us.r-project.org', type = "both")
 install.packages(c('warp', 'WDI', 'webshot', 'whisker', 'withr', 'WrightMap', 'xfun', 'xgboost', 'XML', 'xml2'), repos = 'http://cran.us.r-project.org', type = "both")
-install.packages(c('xtable', 'xts', 'yaml', 'zeallot', 'zip', 'zoo', 'kableExtra'), repos = 'http://cran.us.r-project.org', type = "both")
+install.packages(c('xtable', 'xts', 'yaml', 'zeallot', 'zip', 'zoo', 'kableExtra', 'equatiomatic'), repos = 'http://cran.us.r-project.org', type = "both")
 install.packages("https://cran.r-project.org/bin/macosx/el-capitan/contrib/3.6/foreign_0.8-76.tgz")
 
 # V18, logicFS
