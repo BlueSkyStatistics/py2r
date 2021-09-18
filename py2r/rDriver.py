@@ -194,7 +194,9 @@ close(fp)""")
             # turning off graphical device
             if jumpCursor:
                 try:
-                    yield {"position": int(res[4][0]), "type":"jumpCursor"}
+                    # yield {"message": str(res), "type":"log"}
+                    if (res[0] != -1):
+                        yield {"position": int(res[5][0]), "type":"jumpCursor"}
                 except:
                     yield {"message": f"Jump cursor failed due to {format(format_exc())}", "type":"log"}
         except RRuntimeError as err:
