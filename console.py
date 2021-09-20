@@ -21,7 +21,7 @@ class RShell(cmd.Cmd):
         cmd = loads(self._cmd)
         self._cmd = ''
         for message in self.r.run(**cmd): 
-            print(dumps(message, ensure_ascii=False))
+            print(dumps(message))
     
     def do_rhelp(self, args):
         try:
@@ -31,7 +31,7 @@ class RShell(cmd.Cmd):
                     "message": "R Environment error",
                     "error": format_exc().split('.RRuntimeError:')[1].strip(),
                     "type": "error_dialog"
-                }, ensure_ascii=False))
+                }))
 
     def do_r(self, args):
         message_order = 0
@@ -41,9 +41,9 @@ class RShell(cmd.Cmd):
                     message["count"] = message_order
                     message_order += 1
                 try:
-                    print(dumps(message, ensure_ascii=False))
+                    print(dumps(message))
                 except TypeError:
-                    print(dumps({"message": str(message), "type": "exception"}, ensure_ascii=False))
+                    print(dumps({"message": str(message), "type": "exception"}))
         except:
             print(dumps({"message": f"CLIENT_EXCEPTION (run): unexpected command format {args.encode('utf8')}: exception: {format_exc()}",
                          "type": "exception",
@@ -52,7 +52,7 @@ class RShell(cmd.Cmd):
     def do_openblankds(self, args):
         try:
             for message in self.r.openblankds(**loads(args)):
-                print(dumps(message, ensure_ascii=False))
+                print(dumps(message))
         except decoder.JSONDecodeError:
             print(dumps({"message": f"CLIENT_EXCEPTION (openblank): unexpected command format {args}",
                          "type": "exception",
@@ -77,7 +77,7 @@ class RShell(cmd.Cmd):
         """
         try:
             for message in self.r.open(**loads(args)):
-                print(dumps(message, ensure_ascii=False))
+                print(dumps(message))
         except decoder.JSONDecodeError:
             print(dumps({"message": f"CLIENT_EXCEPTION (open): unexpected command format {args}",
                          "type": "exception",
@@ -91,7 +91,7 @@ class RShell(cmd.Cmd):
     def do_refresh(self, args):
         try:
             for message in self.r.refresh(**loads(args)):
-                print(dumps(message, ensure_ascii=False))
+                print(dumps(message))
         except decoder.JSONDecodeError:
             print(dumps({"message": f"CLIENT_EXCEPTION (refresh): unexpected command format {args}",
                          "type": "exception",
@@ -118,7 +118,7 @@ class RShell(cmd.Cmd):
                          "type": "exception",
                          "code": 500}))
             content = ""
-        print(dumps({"element_id": args["element_id"], "content": content, "type": "modalUpdate"}, ensure_ascii=False))
+        print(dumps({"element_id": args["element_id"], "content": content, "type": "modalUpdate"}))
 
 
 

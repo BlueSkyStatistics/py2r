@@ -195,7 +195,7 @@ close(fp)""")
             if jumpCursor:
                 try:
                     # yield {"message": str(res), "type":"log"}
-                    if (res[0] != -1):
+                    if (res[0][0] != -1):
                         yield {"position": int(res[5][0]), "type":"jumpCursor"}
                 except:
                     yield {"message": f"Jump cursor failed due to {format(format_exc())}", "type":"log"}
