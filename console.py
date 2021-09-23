@@ -6,15 +6,20 @@ from traceback import format_exc
 from py2r.rDriver import RDriver
 from py2r.rUtils import execute_r
 
+from time import time
+
 class RShell(cmd.Cmd):
     prompt = ''
-
     def __init__(self, *args, **kwargs):
+        # start = time()
         super().__init__(*args, **kwargs)
         self._cmd = ''
         self.r = RDriver()
+        # print(dumps({"message": f"RDriver initialized: {int(time()-start)}", "type": "log"}))
+        # start = time()
         for message in self.r.initiate_libs():
             print(dumps(message))
+        # print(dumps({"message": f"Libs initialized: {int(time()-start)}", "type": "log"}))
         print(dumps({"message": "initialized", "type": "init_done"}))
 
     def emptyline(self):
@@ -50,9 +55,11 @@ class RShell(cmd.Cmd):
                          "code": 400}))
 
     def do_openblankds(self, args):
+        # start = time()
         try:
             for message in self.r.openblankds(**loads(args)):
                 print(dumps(message))
+            # print(dumps({"message": f"Blank Dataset open: {int(time()-start)}", "type": "log"}))
         except decoder.JSONDecodeError:
             print(dumps({"message": f"CLIENT_EXCEPTION (openblank): unexpected command format {args}",
                          "type": "exception",
@@ -90,8 +97,10 @@ class RShell(cmd.Cmd):
     
     def do_refresh(self, args):
         try:
+            # start=time()
             for message in self.r.refresh(**loads(args)):
                 print(dumps(message))
+            # print(dumps({"message": f"Blank Dataset reloaded: {int(time()-start)}", "type": "log"}))
         except decoder.JSONDecodeError:
             print(dumps({"message": f"CLIENT_EXCEPTION (refresh): unexpected command format {args}",
                          "type": "exception",
