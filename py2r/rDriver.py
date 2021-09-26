@@ -77,8 +77,8 @@ BSkyGetPvalueDisplaySetting()
         #             cmd += f"{each.strip()}\n"
         #         else:
         #             cmd += f" {each.strip()}\n"
-        stringif = cmd.strip().replace('"','\\"')
-        return cmd.strip(), f'"{stringif}"'
+        stringif = cmd.replace('"','\\"')
+        return cmd, f'"{stringif}"'
 
     def openblankds(self, datasetName='Dataset1'):
         for message in ds.openblankdataset(datasetName):
