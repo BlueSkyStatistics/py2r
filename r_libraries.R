@@ -50,3 +50,4 @@ install.packages(c('warp', 'WDI', 'webshot', 'whisker', 'withr', 'WrightMap', 'x
 install.packages(c('xtable', 'xts', 'yaml', 'zeallot', 'zip', 'zoo', 'kableExtra', 'equatiomatic', 'foreign', 'textutils'), repos = 'http://cran.us.r-project.org', type = "both")
 # V18, logicFS
 install.packages(c('formatR'), repos = 'http://cran.us.r-project.org', type = "both")
+install.packages(c('texreg', 'ggbeeswarm', 'afex', 'effectsize'), repos = 'http://cran.us.r-project.org', type = "both")
