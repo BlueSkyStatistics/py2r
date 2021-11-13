@@ -322,6 +322,16 @@ dev.off()""")
         if str(message) and message != ri.NULL:
             if not str2bool(eval):
                 message = str(message)
+                if 'BSkyHelpCommandMarker' in message:
+                    arr_message = message.split('\n')
+                    message = ''
+                    for line in arr_message:
+                        if 'BSkyHelpCommandMarker' in line:
+                            f_path = line.replace('BSkyHelpCommandMarker', '').replace('\\', '/').strip()
+                            if path.exists(f_path):
+                                webbrowser.open(f"file://{f_path}", new=2)
+                        else:
+                            message += f'{line}\n'
                 if error_message:
                     message = message.replace(error_message['error'], '')
                 return_type = 'console'
