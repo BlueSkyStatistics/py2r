@@ -38,6 +38,11 @@ class RDriver:
     sinkhtml = sinkhtml.replace("\\", "/")
 
     def initiate_libs(self):
+        # opening sink file
+        r(f"""fp <- file("{self.sinkfile}", open = "wt")
+options("warn" = 1)
+sink(fp)
+sink(fp, type = "message")""")
         r('''require('gdata')
 require('stringr')
 require("openxlsx")
@@ -58,6 +63,11 @@ BSkySetHtmlStylingSetting ()
 BSkySetHtmlStylingSetting (tableTheme = "kable_styling", tableHeaderBackgroundColor = "", tableOuterBorder = FALSE, columHeaderScrollFixed = TRUE)
 BSkyGetPvalueDisplaySetting()
 ''')
+# closing sink file
+        r("""sink(type = "message")
+sink()
+flush(fp)
+close(fp)""")
         yield {"message": "started", "type": "rinfo"}
 
     @staticmethod
