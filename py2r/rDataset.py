@@ -11,11 +11,11 @@ def openblankdataset(datasetName):
     for message in getrowcountcolprops(datasetName):
         yield message["message"]
 
-def open(file_path, filetype, wsName, replace_ds, csvHeader, char_to_factor, basket_data, csv_sep, delim, datasetName):
+def open(file_path, filetype, wsName, replace_ds, csvHeader, char_to_factor, basket_data, csv_sep, delim, datasetName, encoding, cgid):
     if filetype == 'SAV':
         filetype = 'SPSS'
-    open_cmd = f"BSkyloadDataset('{file_path}', " \
-                    f"'{filetype}', " \
+    open_cmd = f"BSkyloadDataset(fullpathfilename='{file_path}', " \
+                    f"filetype='{filetype}', " \
                     f"worksheetName={wsName}, " \
                     f"replace_ds={replace_ds}, " \
                     f"load.missing=FALSE, " \
@@ -25,11 +25,17 @@ def open(file_path, filetype, wsName, replace_ds, csvHeader, char_to_factor, bas
                     f"trimSPSStrailing=FALSE, " \
                     f"sepChar='{csv_sep}', " \
                     f"deciChar='{delim}', " \
+                    f"encoding={encoding}, " \
                     f"datasetName='{datasetName}')"
-    yield {"message": open_cmd, "name":datasetName, "type": "syntax"}
-    robjects.r(open_cmd) 
-    for message in getrowcountcolprops(datasetName):
-        yield message["message"]
+    yield {"message": open_cmd, "name":datasetName, "type": "syntax", "error":"", "parent_id":cgid}
+    content = robjects.r(open_cmd) 
+    if content == None or (isinstance(content, list) and content[1] == 'NILSXP'):
+        content = ""
+    else:
+        content = content[0]
+    if content == 0:   
+        for message in getrowcountcolprops(datasetName):
+            yield message["message"]
 
 
 def close(datasetName):
