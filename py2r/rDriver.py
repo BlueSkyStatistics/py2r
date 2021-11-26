@@ -38,6 +38,11 @@ class RDriver:
     sinkhtml = sinkhtml.replace("\\", "/")
 
     def initiate_libs(self):
+        # opening sink file
+        r(f"""fp <- file("{self.sinkfile}", open = "wt")
+options("warn" = 1)
+sink(fp)
+sink(fp, type = "message")""")
         r('''require('gdata')
 require('stringr')
 require("openxlsx")
@@ -58,6 +63,11 @@ BSkySetHtmlStylingSetting ()
 BSkySetHtmlStylingSetting (tableTheme = "kable_styling", tableHeaderBackgroundColor = "", tableOuterBorder = FALSE, columHeaderScrollFixed = TRUE)
 BSkyGetPvalueDisplaySetting()
 ''')
+# closing sink file
+        r("""sink(type = "message")
+sink()
+flush(fp)
+close(fp)""")
         yield {"message": "started", "type": "rinfo"}
 
     @staticmethod
@@ -367,6 +377,16 @@ dev.off()""")
         if str(message) and message != ri.NULL:
             if not str2bool(eval):
                 message = str(message)
+                if 'BSkyHelpCommandMarker' in message:
+                    arr_message = message.split('\n')
+                    message = ''
+                    for line in arr_message:
+                        if 'BSkyHelpCommandMarker' in line:
+                            f_path = line.replace('BSkyHelpCommandMarker', '').replace('\\', '/').strip()
+                            if path.exists(f_path):
+                                webbrowser.open(f"file://{f_path}", new=2)
+                        else:
+                            message += f'{line}\n'
                 if error_message:
                     message = message.replace(error_message['error'], '')
                 return_type = 'console'

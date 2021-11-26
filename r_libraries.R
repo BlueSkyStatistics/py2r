@@ -48,6 +48,6 @@ install.packages(c('tseries', 'TSP', 'units', 'UpSetR', 'urca', 'utf8'), repos =
 install.packages(c('uuid', 'vcd', 'vctrs', 'VIM', 'viridis', 'viridisLite', 'visdat', 'visNetwork', 'visreg'), repos = 'http://cran.us.r-project.org', type = "both")
 install.packages(c('warp', 'WDI', 'webshot', 'whisker', 'withr', 'WrightMap', 'xfun', 'xgboost', 'XML', 'xml2'), repos = 'http://cran.us.r-project.org', type = "both")
 install.packages(c('xtable', 'xts', 'yaml', 'zeallot', 'zip', 'zoo', 'kableExtra', 'equatiomatic', 'foreign', 'textutils'), repos = 'http://cran.us.r-project.org', type = "both")
-# V18, logicFS
-install.packages(c('formatR'), repos = 'http://cran.us.r-project.org', type = "both")
+install.packages(c('formatR', 'devtools'), repos = 'http://cran.us.r-project.org', type = "both")
 install.packages(c('texreg', 'ggbeeswarm', 'afex', 'effectsize', 'heplots'), repos = 'http://cran.us.r-project.org', type = "both")
+# V18, logicFS
