@@ -180,7 +180,21 @@ close(fp)""")
                     "eval": True,
                     "outgrpid": cgid,
                     "parent_id": cgid
-
+                }
+            else :
+                yield {
+                    "cmd": open_cmd,
+                    "message": output_buffer,
+                    "error" : output_buffer,
+                    "caption": "",
+                    "filepath": file_path,
+                    "filetype" : filetype,
+                    "name":  datasetName,
+                    "type": "openesuccesssink",
+                    "code": 200,
+                    "eval": True,
+                    "outgrpid": cgid,
+                    "parent_id": cgid
                 }
 
 
