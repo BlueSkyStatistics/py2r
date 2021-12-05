@@ -102,11 +102,15 @@ close(fp)""")
                 out += f'{line.rstrip()}\n'
         return out
 
-    def open(self, file_path=None, datasetName=None, wsName='NULL',
+    def open(self, file_path=None, datasetName=None, encoding=None, cgid=None, wsName='NULL',
              replace_ds='TRUE', csvHeader='TRUE', char_to_factor='TRUE',
              basket_data='FALSE', csv_sep=',', delim='.'):
         filetype = file_path.split(".")[-1].upper()
         worksheets = []
+        if encoding == None:
+            encoding = f'NULL'
+        else:
+            encoding = f'"{encoding}"'
         if filetype in ('XLS', 'XLSX') and wsName == 'NULL':
             worksheets, _ = execute_r(f'GetTableList(excelfilename="{file_path}", xlsx={str("XLSX" in filetype).upper()})')
         if len(worksheets) == 1: # assuming if there is only 1 ws this is it
@@ -127,15 +131,71 @@ close(fp)""")
                     "char_to_factor": char_to_factor,
                     "basket_data": basket_data,
                     "csv_sep": csv_sep,
-                    "delim": delim
+                    "delim": delim,
+                    "encoding": encoding
                 }
             }
+        output_buffer = ""    
         if len(worksheets) == 0 or wsName != 'NULL':
-            for message in ds.open(file_path, filetype, wsName, 
-                                    replace_ds, csvHeader, 
-                                    char_to_factor, basket_data, 
-                                    csv_sep, delim, datasetName):
-                yield message
+            # open sink
+            r(f"""fp <- file("{self.sinkfile}", open = "wt")
+options("warn" = 1)
+sink(fp)
+sink(fp, type = "message")""")
+            open_cmd = ""
+            try:
+                for message in ds.open(file_path, filetype, wsName, 
+                                        replace_ds, csvHeader, 
+                                        char_to_factor, basket_data, 
+                                        csv_sep, delim, datasetName, encoding, cgid):
+                    if message["type"] == "syntax":
+                        open_cmd = message["message"]
+                    yield message
+            except Exception:
+                print(dumps({"message": f"DATA_EXCEPTION (open-): {format_exc()}",
+                            "type": "exception",
+                            "code": 500}))            
+            # close sink
+            r("""sink(type = "message")
+sink()
+flush(fp)
+close(fp)""")
+            # read sink
+            with open(self.sinkfile) as f:
+                for line in f.readlines():
+                    if line.strip():
+                         output_buffer += f"{line.rstrip()}\n"
+            if "Error:" in output_buffer:
+                yield {"message": f"Output buffer: {output_buffer}", "type": "log"}
+                yield {
+                    "cmd": open_cmd,
+                    "message": output_buffer,
+                    "error" : output_buffer,
+                    "caption": "",
+                    "filepath": file_path,
+                    "filetype" : filetype,
+                    "name":  datasetName,
+                    "type": "openerrorsink",
+                    "code": 400,
+                    "eval": True,
+                    "outgrpid": cgid,
+                    "parent_id": cgid
+                }
+            else :
+                yield {
+                    "cmd": open_cmd,
+                    "message": output_buffer,
+                    "error" : output_buffer,
+                    "caption": "",
+                    "filepath": file_path,
+                    "filetype" : filetype,
+                    "name":  datasetName,
+                    "type": "openesuccesssink",
+                    "code": 200,
+                    "eval": True,
+                    "outgrpid": cgid,
+                    "parent_id": cgid
+                }
 
 
     def refresh(self, datasetName, reloadCols=True, fromrowidx=1, torowidx=20):
@@ -325,7 +385,6 @@ close(fp)""")
         if return_type and return_type == images:
             r("""dev.set(2)
 dev.off()""")
-
 
     def process_message(self, message, filename, cmd='', eval=True, limit=20, updateDataSet=False, 
                         datasetName=None, parent_id=None, output_id=None, code=200, error_message=None):
