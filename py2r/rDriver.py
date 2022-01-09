@@ -55,6 +55,7 @@ require("BlueSky")
 require("kableExtra")
 require("tidyverse")
 require('formatR')
+
 ''')
         r(f'''BSkySetGraphicsDirPath("{self.tmpdir}")
 BSkySetRCommandDisplaySetting(echo = TRUE, echoInline = TRUE)
@@ -62,6 +63,7 @@ BSkySetKableAndRmarkdownFormatting(BSkyKableFormatting = TRUE, BSkyRmarkdownForm
 BSkySetHtmlStylingSetting ()
 BSkySetHtmlStylingSetting (tableTheme = "kable_styling", tableHeaderBackgroundColor = "", tableOuterBorder = FALSE, columHeaderScrollFixed = TRUE)
 BSkyGetPvalueDisplaySetting()
+.libPaths(c(.libPaths(),  gsub( '\\\\\\\\', '/',Sys.getenv('R_LIBS_USER'))))
 ''')
 # closing sink file
         r("""sink(type = "message")
