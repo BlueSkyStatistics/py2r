@@ -28,7 +28,7 @@ block_cipher = None
 
 a = Analysis(['console.py'],
              pathex=[
-                 '/Users/arozumenko/Development/analytics/BlueSkyJS/py2rbackend/venv/lib/python3.7/site-packages', 
+                 '/Users/arozumenko/Development/analytics/BlueSkyJS/py2rbackend/venv/lib/python3.8/site-packages',
                  '/Users/arozumenko/Development/analytics/BlueSkyJS/py2rbackend'],
              binaries=binaries,
              datas=datas,
