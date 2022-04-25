@@ -5,6 +5,7 @@ from json import loads, dumps, decoder
 from traceback import format_exc
 from py2r.rDriver import RDriver
 from py2r.rUtils import execute_r
+from py2r.git_market import clone_repo
 
 from time import time
 
@@ -128,6 +129,17 @@ class RShell(cmd.Cmd):
                          "code": 500}))
             content = ""
         print(dumps({"element_id": args["element_id"], "content": content, "type": "modalUpdate"}))
+
+    def do_clone(self, args):
+        args = loads(args)
+        try:
+            clone_repo(args)
+            print(dumps({"content": "done", "type": "git_clone"}))
+        except Exception:
+            print(dumps({"message": f"GIT_EXCEPTION (do_clone): {format_exc()}\n command: {args}",
+                         "type": "exception",
+                         "code": 500}))
+
 
 
 
