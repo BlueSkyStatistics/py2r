@@ -1,13 +1,15 @@
 import cmd
-from os import environ
 from sys import exit
 from json import loads, dumps, decoder
 from traceback import format_exc
 from py2r.rDriver import RDriver
 from py2r.rUtils import execute_r
-from py2r.git_market import clone_repo
+try:
+    from py2r.git_market import clone_repo
+    nogit = False
+except:
+    nogit = True
 
-from time import time
 
 class RShell(cmd.Cmd):
     prompt = ''
@@ -131,6 +133,10 @@ class RShell(cmd.Cmd):
         print(dumps({"element_id": args["element_id"], "content": content, "type": "modalUpdate"}))
 
     def do_clone(self, args):
+        if nogit:
+            return print(dumps({"message": f"GIT_CONFIG (do_clone): git was not able to load "
+                                           f"due to exception on import",
+                                "type": "exception", "code": 500}))
         args = loads(args)
         try:
             clone_repo(args)
