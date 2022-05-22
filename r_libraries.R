@@ -50,4 +50,7 @@ install.packages(c('warp', 'WDI', 'webshot', 'whisker', 'withr', 'WrightMap', 'x
 install.packages(c('xtable', 'xts', 'yaml', 'zeallot', 'zip', 'zoo', 'kableExtra', 'equatiomatic', 'foreign', 'textutils'), repos = 'http://cran.us.r-project.org', type = "both")
 install.packages(c('formatR', 'devtools'), repos = 'http://cran.us.r-project.org', type = "both")
 install.packages(c('texreg', 'ggbeeswarm', 'afex', 'effectsize', 'heplots'), repos = 'http://cran.us.r-project.org', type = "both")
+install.packages(c('irrCAC', 'arrow', 'pzfx'), repos = 'http://cran.us.r-project.org', type = "both")
+install.packages(c('DoE.base', 'FrF2', 'DoE.wrapper','effects'), repos = 'http://cran.us.r-project.org', type = "both")
+install.packages(c('qcc', 'SixSigma'), repos = 'http://cran.us.r-project.org', type = "both")
 # V18, logicFS
