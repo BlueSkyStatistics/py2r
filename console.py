@@ -5,7 +5,11 @@ from traceback import format_exc
 from py2r.rDriver import RDriver
 from py2r.rUtils import execute_r
 try:
+    #
+    # Release 10.2 features
+    #
     from py2r.git_market import clone_repo
+    from py2r.pyConsole import run_py
     nogit = False
 except:
     nogit = True
@@ -56,6 +60,24 @@ class RShell(cmd.Cmd):
             print(dumps({"message": f"CLIENT_EXCEPTION (run): unexpected command format {args.encode('utf8')}: exception: {format_exc()}",
                          "type": "exception",
                          "code": 400}))
+
+    def do_py(self, args):
+        message_order = 0
+        try:
+            for message in run_py(**loads(args)):
+                if message["type"] != 'log':
+                    message["count"] = message_order
+                    message_order += 1
+                try:
+                    print(dumps(message))
+                except TypeError:
+                    print(dumps({"message": str(message), "type": "exception"}))
+        except:
+            print(dumps({
+                            "message": f"CLIENT_EXCEPTION (runpy): unexpected command format {args.encode('utf8')}: exception: {format_exc()}",
+                            "type": "exception",
+                            "code": 400}))
+
 
     def do_openblankds(self, args):
         # start = time()
