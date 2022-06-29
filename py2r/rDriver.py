@@ -43,7 +43,11 @@ class RDriver:
 options("warn" = 1)
 sink(fp)
 sink(fp, type = "message")""")
-        r('''require('gdata')
+        r('''
+#Added by Aaron 06/26/2022
+#This sets the library path to our installation location and ensures all our packages get installed from our path
+.libPaths(.Library)         
+require('gdata')
 require('stringr')
 require("openxlsx")
 require("haven")
@@ -63,6 +67,9 @@ BSkySetKableAndRmarkdownFormatting(BSkyKableFormatting = TRUE, BSkyRmarkdownForm
 BSkySetHtmlStylingSetting ()
 BSkySetHtmlStylingSetting (tableTheme = "kable_styling", tableHeaderBackgroundColor = "", tableOuterBorder = FALSE, columHeaderScrollFixed = TRUE)
 BSkyGetPvalueDisplaySetting()
+#Added by Aaron 06/26/2022
+#This puts the user lib path in the 2nd location, this means any new packages loaded by the user will be superceded by packages in our install directory
+#This means that a user will not be able to update our packages unless they have read write to our install directory
 BSkysetNewLibPath()
 ''')
 # closing sink file
