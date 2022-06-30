@@ -16,7 +16,8 @@ Curenly we are running on latest version of rpy2
 5. install `pip install urllib3==1.26.9`
 6. install `pip install dulwich==0.20.35 --global-option="--pure"`
 7. install `pip install paramiko==2.6.0`
-8. For distribution you'd need to install pyinstaller `pip install pyinstaller==4.10`
+8. install `pip install six==1.16.0`
+9. For distribution you'd need to install pyinstaller `pip install pyinstaller==4.10`
 
 ### Distribution
 Run `./venv/bin/pyinstaller console.spec` it will build executable `RConsole` in `dist` folder

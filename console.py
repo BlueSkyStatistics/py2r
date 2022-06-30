@@ -30,10 +30,14 @@ class RShell(cmd.Cmd):
         print(dumps({"message": "initialized", "type": "init_done"}))
 
     def emptyline(self):
-        cmd = loads(self._cmd)
-        self._cmd = ''
-        for message in self.r.run(**cmd): 
-            print(dumps(message))
+        try:
+            cmd = loads(self._cmd)
+            self._cmd = ''
+            for message in self.r.run(**cmd):
+                print(dumps(message))
+        except:
+            print(f"JSON encoding failed for {self._cmd}")
+
     
     def do_rhelp(self, args):
         try:
