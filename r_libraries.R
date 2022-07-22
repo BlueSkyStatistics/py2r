@@ -53,4 +53,5 @@ install.packages(c('texreg', 'ggbeeswarm', 'afex', 'effectsize', 'heplots'), rep
 install.packages(c('irrCAC', 'arrow', 'pzfx'), repos = 'http://cran.us.r-project.org', type = "both")
 install.packages(c('DoE.base', 'FrF2', 'DoE.wrapper','effects'), repos = 'http://cran.us.r-project.org', type = "both")
 install.packages(c('qcc', 'SixSigma'), repos = 'http://cran.us.r-project.org', type = "both")
+install.packages(c('tzdb', 'vroom', 'farver','svglite', 'fastmap'), repos = 'http://cran.us.r-project.org', type = "both")
 # V18, logicFS
