@@ -153,10 +153,11 @@ sink(fp)
 sink(fp, type = "message")""")
             open_cmd = ""
             try:
-                for message in ds.open(file_path, filetype, wsName, 
-                                        replace_ds, csvHeader, 
-                                        char_to_factor, basket_data, 
-                                        csv_sep, delim, datasetName, encoding, cgid):
+                for message in ds.open(file_path, filetype, wsName,
+                                       replace_ds, csvHeader,
+                                       char_to_factor, basket_data,
+                                       csv_sep, delim, datasetName,
+                                       encoding, cgid):
                     if message["type"] == "syntax":
                         open_cmd = message["message"]
                     yield message
@@ -179,10 +180,10 @@ close(fp)""")
                 yield {
                     "cmd": open_cmd,
                     "message": output_buffer,
-                    "error" : output_buffer,
+                    "error": output_buffer,
                     "caption": "",
                     "filepath": file_path,
-                    "filetype" : filetype,
+                    "filetype": filetype,
                     "name":  datasetName,
                     "type": "openerrorsink",
                     "code": 400,
@@ -194,10 +195,10 @@ close(fp)""")
                 yield {
                     "cmd": open_cmd,
                     "message": output_buffer,
-                    "error" : output_buffer,
+                    "error": output_buffer,
                     "caption": "",
                     "filepath": file_path,
-                    "filetype" : filetype,
+                    "filetype": filetype,
                     "name":  datasetName,
                     "type": "openesuccesssink",
                     "code": 200,

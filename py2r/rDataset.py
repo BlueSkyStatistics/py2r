@@ -27,9 +27,9 @@ def open(file_path, filetype, wsName, replace_ds, csvHeader, char_to_factor, bas
                     f"deciChar='{delim}', " \
                     f"encoding={encoding}, " \
                     f"datasetName='{datasetName}')"
-    yield {"message": open_cmd, "name":datasetName, "type": "syntax", "error":"", "parent_id":cgid}
+    yield {"message": open_cmd, "name": datasetName, "type": "syntax", "error": "", "parent_id": cgid}
     content = robjects.r(open_cmd) 
-    if content == None or (isinstance(content, list) and content[1] == 'NILSXP'):
+    if content is None or (isinstance(content, list) and content[1] == 'NILSXP'):
         content = ""
     else:
         content = content[0]
@@ -81,7 +81,7 @@ def getrowcountcolprops(datasetName, reloadCols=True):
     rc = loads(rc[0])
     cc, _ = execute_r(f'jsonlite::toJSON(ncol(.GlobalEnv${datasetName}))')
     cc = loads(cc[0])
-    res = {"name": datasetName, "cols": [], "rowcount": rc[0], "colcount":cc[0], "type":"rccolprop"} #rccolprop = rowcount-colprop
+    res = {"name": datasetName, "cols": [], "rowcount": rc[0], "colcount": cc[0], "type": "rccolprop"} #rccolprop = rowcount-colprop
     if reloadCols:
         for index in range(1, cc[0]+1):
             col_details_cmd = f"data=UAgetColProperties(dataSetNameOrIndex='.GlobalEnv${datasetName}', colNameOrIndex={index}, " \
