@@ -277,7 +277,9 @@ close(fp)""")
                 try:
                     # yield {"message": str(res), "type":"log"}
                     if (res[0][0] != -1):
-                        yield {"position": int(res[5][0]), "type":"jumpCursor"}
+                        yield {"position": int(res[5][0]), "type": "jumpCursor"}
+                        yield {"cmd": '\n'.join(res[6]), "type": "updateCommand",
+                               "parent_id": parent_id, "output_id": output_id }
                 except:
                     yield {"message": f"Jump cursor failed due to {format(format_exc())}", "type":"log"}
         except RRuntimeError as err:
