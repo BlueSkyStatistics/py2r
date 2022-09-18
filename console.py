@@ -41,7 +41,8 @@ class RShell(cmd.Cmd):
     
     def do_rhelp(self, args):
         try:
-            self.r.rhelp(**loads(args))
+            for message in self.r.run(**loads(args)):
+                print(dumps(message))
         except:
             print(dumps({
                     "message": "R Environment error",
