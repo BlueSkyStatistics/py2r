@@ -57,6 +57,7 @@ def convert_table(r_response, limit=20):
             except:
                 longest.append(0)
         max_index = max(longest)
+        limit = max_index if limit == -1 else limit
         try:
             for i in range(max_index if max_index < limit else limit):
                 _arr = []
@@ -82,7 +83,10 @@ def convert_to_data(r_response, limit=20, is_table=False):
     is_factor = hasattr(r_response, "levels")
     _array = r_response
     if is_table:
-        _array = r_response[:limit]
+        if limit != -1:
+            _array = r_response[:limit]
+        else:
+            _array = r_response
     if not hasattr(r_response, "typeof"):
         return r_response, type(r_response)
     if isinstance(r_response.typeof, int):

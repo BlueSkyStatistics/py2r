@@ -172,7 +172,20 @@ class RShell(cmd.Cmd):
                          "type": "exception",
                          "code": 500}))
 
-
+    def do_check_installed(self, args):
+        try:
+            cmd = """ip = as.data.frame(installed.packages()[,c(1,3:4)])
+    ip = ip[is.na(ip$Priority),1:2,drop=FALSE]
+    ip
+            """
+            content = execute_r(cmd, eval=True, limit=-1)
+            if content[1] == 'NILSXP':
+                content = ""
+            else:
+                content = content[0]
+        except:
+            content = []
+        print(dumps({"content": content, "type": "installedPackages"}))
 
 
 if __name__ == '__main__':

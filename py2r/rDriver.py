@@ -26,7 +26,8 @@ import py2r.rDataset as ds
 r = robjects.r
 bsky = blueSkyParser()
 
-class RDriver:
+
+class RDriver(object):
     if 'win' not in platform or 'darwin' in platform:
         tmpdir = gettempdir()
     else:
@@ -96,7 +97,7 @@ close(fp)""")
         #             cmd += f"{each.strip()}\n"
         #         else:
         #             cmd += f" {each.strip()}\n"
-        stringif = cmd.replace('"','\\"')
+        stringif = cmd.replace('"', '\\"')
         return cmd, f'"{stringif}"'
 
     def openblankds(self, datasetName='Dataset1'):
@@ -116,7 +117,7 @@ close(fp)""")
              basket_data='FALSE', csv_sep=',', delim='.'):
         filetype = file_path.split(".")[-1].upper()
         worksheets = []
-        if encoding == None:
+        if encoding is None:
             encoding = f'NULL'
         else:
             encoding = f'"{encoding}"'
@@ -174,7 +175,7 @@ close(fp)""")
             with open(self.sinkfile) as f:
                 for line in f.readlines():
                     if line.strip():
-                         output_buffer += f"{line.rstrip()}\n"
+                        output_buffer += f"{line.rstrip()}\n"
             if "Error:" in output_buffer:
                 yield {"message": f"Output buffer: {output_buffer}", "type": "log"}
                 yield {
@@ -191,7 +192,7 @@ close(fp)""")
                     "outgrpid": cgid,
                     "parent_id": cgid
                 }
-            else :
+            else:
                 yield {
                     "cmd": open_cmd,
                     "message": output_buffer,
@@ -206,7 +207,6 @@ close(fp)""")
                     "outgrpid": cgid,
                     "parent_id": cgid
                 }
-
 
     def refresh(self, datasetName, reloadCols=True, fromrowidx=1, torowidx=20):
         try:
@@ -276,12 +276,12 @@ close(fp)""")
             if jumpCursor:
                 try:
                     # yield {"message": str(res), "type":"log"}
-                    if (res[0][0] != -1):
+                    if res[0][0] != -1:
                         yield {"position": int(res[5][0]), "type": "jumpCursor"}
                         yield {"cmd": '\n'.join(res[6]), "type": "updateCommand",
-                               "parent_id": parent_id, "output_id": output_id }
+                               "parent_id": parent_id, "output_id": output_id}
                 except:
-                    yield {"message": f"Jump cursor failed due to {format(format_exc())}", "type":"log"}
+                    yield {"message": f"Jump cursor failed due to {format(format_exc())}", "type": "log"}
         except RRuntimeError as err:
             code = 400
             return_type = "exception"
