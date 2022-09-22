@@ -46,12 +46,13 @@ class RDriver(object):
 options("warn" = 1)
 sink(fp)
 sink(fp, type = "message")""")
+        # Added by Aaron 06/26/2022
+        # This sets the library path to our installation location and ensures all our packages get installed from our path
+        # newLibPath <- .libPaths()
+        # newLibPath <- append(c("{self.libpaths}"), newLibPath)
+        # .libPaths(newLibPath)
         r(f'''
-#Added by Aaron 06/26/2022
-#This sets the library path to our installation location and ensures all our packages get installed from our path
-newLibPath <- .libPaths()
-newLibPath <- append(c("{self.libpaths}"), newLibPath)
-.libPaths(newLibPath)         
+.libPaths(.Library)         
 require('gdata')
 require('stringr')
 require("openxlsx")
