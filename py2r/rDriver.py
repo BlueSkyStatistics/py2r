@@ -37,6 +37,8 @@ class RDriver(object):
     sinkhtml = path.join(tmpdir, 'help.html')
     sinkfile = sinkfile.replace("\\", "/")
     sinkhtml = sinkhtml.replace("\\", "/")
+    r_home_dir = environ.get('R_HOME_DIR')
+    libpaths = path.join(r_home_dir, 'library')
 
     def initiate_libs(self):
         # opening sink file
@@ -44,10 +46,12 @@ class RDriver(object):
 options("warn" = 1)
 sink(fp)
 sink(fp, type = "message")""")
-        r('''
+        r(f'''
 #Added by Aaron 06/26/2022
 #This sets the library path to our installation location and ensures all our packages get installed from our path
-.libPaths(.Library)         
+newLibPath <- .libPaths()
+newLibPath <- append(c("{self.libpaths}"), newLibPath)
+.libPaths(newLibPath)         
 require('gdata')
 require('stringr')
 require("openxlsx")
