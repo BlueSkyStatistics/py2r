@@ -2,14 +2,14 @@ import cmd
 from sys import exit
 from json import loads, dumps, decoder
 from traceback import format_exc
-from py2r.rDriver import RDriver
 from py2r.rUtils import execute_r
+from py2r.pyConsole import run_py
+from py2r.rDriver import RDriver
 try:
     #
     # Release 10.2 features
     #
     from py2r.git_market import clone_repo
-    from py2r.pyConsole import run_py
     nogit = False
 except:
     nogit = True
@@ -37,7 +37,6 @@ class RShell(cmd.Cmd):
                 print(dumps(message))
         except:
             print(f"JSON encoding failed for {self._cmd}")
-
     
     def do_rhelp(self, args):
         try:
