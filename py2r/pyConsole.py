@@ -15,7 +15,8 @@ except ImportError:
     except ModuleNotFoundError:
         raise ModuleNotFoundError(
             "Can't find a ast unparse function -- you'll need python 3.9+ "
-            "or (pip/conda) install astunparse")
+            "or (pip/conda) install astunparse"
+        )
 
 import sys
 from contextlib import redirect_stdout, redirect_stderr, contextmanager

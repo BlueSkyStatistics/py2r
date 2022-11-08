@@ -38,7 +38,6 @@ class RDriver(object):
     sinkfile = sinkfile.replace("\\", "/")
     sinkhtml = sinkhtml.replace("\\", "/")
     r_home_dir = environ.get('R_HOME_DIR')
-    libpaths = path.join(r_home_dir, 'library')
 
     def initiate_libs(self):
         # opening sink file
@@ -48,9 +47,6 @@ sink(fp)
 sink(fp, type = "message")""")
         # Added by Aaron 06/26/2022
         # This sets the library path to our installation location and ensures all our packages get installed from our path
-        # newLibPath <- .libPaths()
-        # newLibPath <- append(c("{self.libpaths}"), newLibPath)
-        # .libPaths(newLibPath)
         r(f'''
 .libPaths(.Library)         
 require('gdata')
