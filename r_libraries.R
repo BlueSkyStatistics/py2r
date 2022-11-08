@@ -54,5 +54,5 @@ install.packages(c('irrCAC', 'arrow', 'pzfx'), repos = 'http://cran.us.r-project
 install.packages(c('DoE.base', 'FrF2', 'DoE.wrapper','effects'), repos = 'http://cran.us.r-project.org', type = "both")
 install.packages(c('qcc', 'SixSigma'), repos = 'http://cran.us.r-project.org', type = "both")
 install.packages(c('tzdb', 'vroom', 'farver','svglite', 'fastmap'), repos = 'http://cran.us.r-project.org', type = "both")
-install.packages(c('r2mlm'), repos = 'http://cran.us.r-project.org', type = "both")
+install.packages(c('r2mlm', 'ppcor'), repos = 'http://cran.us.r-project.org', type = "both")
 # V18, logicFS
