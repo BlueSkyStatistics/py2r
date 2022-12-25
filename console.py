@@ -65,6 +65,21 @@ class RShell(cmd.Cmd):
                          "type": "exception",
                          "code": 400}))
 
+    def do_md(self, args): 
+        args = loads(args)
+        print(dumps({
+                    "message": str(args['cmd']),
+                    "caption": "",
+                    "type": "markdown",
+                    "code": 200,
+                    "updateDataSet": False,
+                    "name": args.get('datasetName', None),
+                    "cmd": args['cmd'],
+                    "eval": True,
+                    "parent_id": args.get('parent_id', None),
+                    "output_id": args.get('output_id', None), 
+                }))
+
     def do_py(self, args):
         message_order = 0
         try:
