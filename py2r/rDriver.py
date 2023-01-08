@@ -315,7 +315,7 @@ close(fp)""")
                                                             '', cmd=cmd, eval=False, limit=limit, 
                                                             updateDataSet=updateDataSet, datasetName=datasetName, 
                                                             parent_id=parent_id, output_id=output_id, code=code):
-                                msg["type"] = "markdown"
+                                msg["type"] = "console"
                                 yield msg
                         output_buffer = ""
                         for msg in bsky.bskyformat_parser(cmd=cmd, limit=limit, 
@@ -367,7 +367,7 @@ close(fp)""")
                                                 datasetName=datasetName, parent_id=parent_id, 
                                                 output_id=output_id, code=code, 
                                                 error_message=error_message):
-                    msg["type"] = "markdown"
+                    msg["type"] = "console"
                     yield msg
             if "Error:" in output_buffer:
                 yield {"message": f"Output buffer: {output_buffer}", "type": "log"}
