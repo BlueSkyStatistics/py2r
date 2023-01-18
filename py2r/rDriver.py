@@ -124,9 +124,7 @@ close(fp)""")
             encoding = f'"{encoding}"'
         if filetype in ('XLS', 'XLSX') and wsName == 'NULL':
             worksheets, _ = execute_r(f'GetTableList(excelfilename="{file_path}", xlsx={str("XLSX" in filetype).upper()})')
-        if len(worksheets) == 1: # assuming if there is only 1 ws this is it
-            wsName = f'"{worksheets[0]}"'
-        elif len(worksheets) > 1: # asking to prompt wsName
+        if len(worksheets) >= 1: # prompt wsName
             yield {
                 "message": worksheets,
                 "type": 'worksheets',
