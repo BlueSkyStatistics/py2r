@@ -56,4 +56,6 @@ install.packages(c('qcc', 'SixSigma'), repos = 'http://cran.us.r-project.org', t
 install.packages(c('tzdb', 'vroom', 'farver','svglite', 'fastmap'), repos = 'http://cran.us.r-project.org', type = "both")
 install.packages(c('r2mlm', 'ppcor'), repos = 'http://cran.us.r-project.org', type = "both")
 install.packages(c('pwr', 'powerSurvEpi', 'presize'), repos = 'http://cran.us.r-project.org', type = "both")
+install.packages(c('fitdistrplus', 'gamlss', 'gamlss.add', 'gamlss.dist'), repos = 'http://cran.us.r-project.org', type = "both")
+install.packages(c('IAcsSPCR'), repos = 'http://cran.us.r-project.org', type = "both")
 # V18, logicFS
