@@ -58,4 +58,5 @@ install.packages(c('r2mlm', 'ppcor'), repos = 'http://cran.us.r-project.org', ty
 install.packages(c('pwr', 'powerSurvEpi', 'presize'), repos = 'http://cran.us.r-project.org', type = "both")
 install.packages(c('fitdistrplus', 'gamlss', 'gamlss.add', 'gamlss.dist'), repos = 'http://cran.us.r-project.org', type = "both")
 install.packages(c('IAcsSPCR'), repos = 'http://cran.us.r-project.org', type = "both")
+install.packages(c('generalhoslem'), repos = 'http://cran.us.r-project.org', type = "both")
 # V18, logicFS
