@@ -25,3 +25,16 @@ def execute_r(cmd, eval=True, limit=20):
         message = str(message)
         return_type = 'console'
     return message, return_type
+
+# this function is a copy of the 'execute_r' function above. 
+# This function will only be used  in rDataset.getrowcountcolprops() to support Chinese/Turkish column names
+# try-except must be used in this function otherwise rpy2 is throwing exception when it finds non-English column names
+# and then the column does not load and hence dataset does not refresh. And for this special requirement I do not want 
+# to use this the 'execute_r' function above. try-except will make sure that the dataset loading process is not 
+# interrupted when non-English column name is found
+def execute_r2(cmd, eval=True, limit=20):
+    try:
+        robjects.r(cmd)
+    except Exception:
+        return None
+    return None

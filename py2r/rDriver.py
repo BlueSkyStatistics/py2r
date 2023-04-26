@@ -41,7 +41,7 @@ class RDriver(object):
 
     def initiate_libs(self):
         # opening sink file
-        r(f"""fp <- file("{self.sinkfile}", open = "wt")
+        r(f"""fp <- file("{self.sinkfile}", open = "wt", encoding = "UTF-8")
 options("warn" = 1)
 sink(fp)
 sink(fp, type = "message")""")
@@ -147,7 +147,7 @@ close(fp)""")
         output_buffer = ""    
         if len(worksheets) == 0 or wsName != 'NULL':
             # open sink
-            r(f"""fp <- file("{self.sinkfile}", open = "wt")
+            r(f"""fp <- file("{self.sinkfile}", open = "wt", encoding = "UTF-8")
 options("warn" = 1)
 sink(fp)
 sink(fp, type = "message")""")
@@ -171,7 +171,7 @@ sink()
 flush(fp)
 close(fp)""")
             # read sink
-            with open(self.sinkfile) as f:
+            with open(self.sinkfile, encoding='utf-8') as f:
                 for line in f.readlines():
                     if line.strip():
                         output_buffer += f"{line.rstrip()}\n"
@@ -247,7 +247,7 @@ dev.off()""")
             # opening graphics device
             r(f"""{imagesType}(filename='{filename}', width={plotWidth}, height={plotHeight})""")
             # opening sink file
-            r(f"""fp <- file("{self.sinkfile}", open = "wt")
+            r(f"""fp <- file("{self.sinkfile}", open = "wt", encoding = "UTF-8")
 options("warn" = 1)
 sink(fp)
 sink(fp, type = "message")""")
@@ -303,7 +303,7 @@ close(fp)""")
             # initializing bskyqueue
             bsky.check_queue_not_empty()
             # processing lines from sinkfile
-            with open(self.sinkfile) as f:
+            with open(self.sinkfile, encoding='utf-8') as f:
                 for line in f.readlines():
                     if any(a in line for a in ["BSkyFormatInternalSyncFileMarker", 
                                                "BSkyGraphicsFormatInternalSyncFileMarker", 
