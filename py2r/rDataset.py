@@ -1,7 +1,7 @@
 from json import loads
 from rpy2 import robjects
 
-from py2r.rUtils import execute_r
+from py2r.rUtils import execute_r,  execute_r2
 
 def openblankdataset(datasetName):
     open_cmd = f"BSkyOpenNewDataset(datasetName='{datasetName}', noOfRows=80,noOfCols=15)" 
@@ -85,8 +85,8 @@ def getrowcountcolprops(datasetName, reloadCols=True):
     if reloadCols:
         for index in range(1, cc[0]+1):
             col_details_cmd = f"data=UAgetColProperties(dataSetNameOrIndex='.GlobalEnv${datasetName}', colNameOrIndex={index}, " \
-                            f"asClass=FALSE, isDSValidated=TRUE);"             
-            execute_r(col_details_cmd)
+                            f"asClass=FALSE, isDSValidated=TRUE);"  
+            execute_r2(col_details_cmd)
             col, _ = execute_r("jsonlite::toJSON(data, na = NULL)")
             res["cols"].append(loads(col[0]))
     yield {

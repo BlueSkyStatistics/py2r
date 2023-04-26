@@ -1,10 +1,12 @@
 import cmd
-from sys import exit
+from sys import exit, stdin, stdout
 from json import loads, dumps, decoder
 from traceback import format_exc
 from py2r.rUtils import execute_r
 from py2r.pyConsole import run_py
 from py2r.rDriver import RDriver
+stdin.reconfigure(encoding='utf-8')
+stdout.reconfigure(encoding='utf-8')
 try:
     #
     # Release 10.2 features
