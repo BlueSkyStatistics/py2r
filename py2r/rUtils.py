@@ -3,9 +3,10 @@ import string
 from .pylogger import logger
 
 try:
-    logger.info("initializing R")
+    logger.info("initializing R...")
+    logger.info("If you do not see a success message below this message then that means R failed to launch.")
     import rpy2.robjects as robjects 
-    logger.info("R initialized")
+    logger.info("R initialized successfully")
 except RuntimeError as e:
     logger.exception("Error initializing R from rutils")
     raise e
