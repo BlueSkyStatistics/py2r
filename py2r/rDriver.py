@@ -6,14 +6,18 @@ from json import dumps
 from tempfile import gettempdir
 from traceback import format_exc
 from sys import platform
-
-
+from .pylogger import logger
 import rpy2.rinterface as ri
+
 try:
     from rpy2.rinterface_lib.embedded import RRuntimeError
 except:
     from rpy2.rinterface import RRuntimeError
-import rpy2.robjects as robjects
+try:
+    import rpy2.robjects as robjects
+except Exception as e:
+    logger.exception("Error initializing R from rdriver")
+    raise e   
 import rpy2.robjects.vectors as vectors
 from rpy2.robjects.packages import importr
 
@@ -23,7 +27,11 @@ from py2r.blueskyparser import blueSkyParser
 from py2r.rUtils import execute_r, randomString, str2bool
 import py2r.rDataset as ds
 
-r = robjects.r
+try:
+    r = robjects.r
+except Exception as e:
+    print("An error occurred while robjects.r")
+    print(e)     
 bsky = blueSkyParser()
 
 

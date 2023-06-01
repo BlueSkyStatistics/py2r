@@ -1,7 +1,14 @@
 import random
 import string
+from .pylogger import logger
 
-import rpy2.robjects as robjects
+try:
+    logger.info("initializing R")
+    import rpy2.robjects as robjects 
+    logger.info("R initialized")
+except RuntimeError as e:
+    logger.exception("Error initializing R from rutils")
+    raise e
 
 from py2r.data_converter import convert_to_data
 
