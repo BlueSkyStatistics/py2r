@@ -2,7 +2,15 @@ import cmd
 from sys import exit, stdin, stdout
 from json import loads, dumps, decoder
 from traceback import format_exc
-from py2r.rUtils import execute_r
+from py2r.pylogger import logger
+
+try:
+    logger.info('importing execute_r from rutils and init. R')
+    from py2r.rUtils import execute_r
+except Exception as e:
+    logger.critical("error while importing execute_r")
+    raise e
+  
 from py2r.pyConsole import run_py
 from py2r.rDriver import RDriver
 stdin.reconfigure(encoding='utf-8')

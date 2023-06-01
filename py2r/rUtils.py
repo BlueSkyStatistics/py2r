@@ -1,7 +1,15 @@
 import random
 import string
+from .pylogger import logger
 
-import rpy2.robjects as robjects
+try:
+    logger.info("initializing R...")
+    logger.info("If you do not see a success message below this message then that means R failed to launch.")
+    import rpy2.robjects as robjects 
+    logger.info("R initialized successfully")
+except RuntimeError as e:
+    logger.exception("Error initializing R from rutils")
+    raise e
 
 from py2r.data_converter import convert_to_data
 

@@ -1,5 +1,10 @@
 from math import isnan
-from rpy2.rinterface import NULL as NULL
+from .pylogger import logger
+
+try:
+    from rpy2.rinterface import NULL as NULL
+except Exception as e:
+    logger.exception("error while importing NULL from rinterface")
 try:
     from rpy2.rinterface import NAIntegerType
 except:
