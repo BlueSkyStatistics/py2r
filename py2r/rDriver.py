@@ -30,8 +30,8 @@ import py2r.rDataset as ds
 try:
     r = robjects.r
 except Exception as e:
-    print("An error occurred while robjects.r")
-    print(e)     
+    logger.exception("An error occurred while executing robjects.r")
+    raise e     
 bsky = blueSkyParser()
 
 
