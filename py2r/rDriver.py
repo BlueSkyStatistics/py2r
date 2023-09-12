@@ -262,7 +262,7 @@ sink(fp, type = "message")""")
             # Executing R
             res = r(f"""
 dev.set(2)
-BSkyEvalRcommand(RcommandString = {stringified}, currentDatasetName = "{datasetName}", ignoreSplitOn = {splitIgnore}, echo = {echo}, echoInline = {echoInline}, numExprParse = {numExpr}, selectionStartpos = {startPosition}, selectionEndpos = {endPosition})
+BSkyEvalRcommand(RcommandString = {stringified}, currentDatasetName = "{datasetName}", ignoreSplitOn = {splitIgnore}, numExprParse = {numExpr}, selectionStartpos = {startPosition}, selectionEndpos = {endPosition})
 """
 )
             # closing sink file
