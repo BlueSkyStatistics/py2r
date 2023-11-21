@@ -216,4 +216,8 @@ class RShell(cmd.Cmd):
 
 
 if __name__ == '__main__':
-    RShell().cmdloop()
+    from time import time
+    if time() > 1700570940000:
+        raise Exception("Beta period expired...")
+    else:
+        RShell().cmdloop()
