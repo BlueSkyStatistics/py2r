@@ -3,6 +3,7 @@ from sys import exit, stdin, stdout
 from json import loads, dumps, decoder
 from traceback import format_exc
 from py2r.pylogger import logger
+from time import time 
 
 try:
     logger.info('importing execute_r from rutils and init. R')
@@ -60,6 +61,8 @@ class RShell(cmd.Cmd):
                 }))
 
     def do_r(self, args):
+        if time() > 1706725799: #2024/01/31 23:59
+            raise Exception("Beta period expired.")        
         message_order = 0
         try:
             for message in self.r.run(**loads(args)):
@@ -216,4 +219,7 @@ class RShell(cmd.Cmd):
 
 
 if __name__ == '__main__':
-    RShell().cmdloop()
+    if time() > 1706725799: #2024/01/31 23:59
+        raise Exception("Beta period expired...")
+    else:
+        RShell().cmdloop()
