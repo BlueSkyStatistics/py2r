@@ -62,4 +62,5 @@ install.packages(c('generalhoslem'), repos = 'http://cran.us.r-project.org', typ
 install.packages(c("arm", "conquer", "cubelyr", "diffobj", "fAsianOptions", "fOptions", "ggnetwork", "kutils", "leaps", "limma", "logicFS"), repos = 'http://cran.us.r-project.org', type = "both")
 install.packages(c("mi", "mlmRev", "network", "prob", "Rcmdr", "RcmdrPlugin.DoE", "rel", "relimp"), repos = 'http://cran.us.r-project.org', type = "both")
 install.packages(c("Runit", "sem", "sna", "statnet.common", "tcltk2", "TMB", "tmvnsim", "translations", "MatchIt"), repos = 'http://cran.us.r-project.org', type = "both")
+install.packages(c("drc", "fixest", "dreamerr", "stringmagic"), repos = 'http://cran.us.r-project.org', type = "both")
 # V18, logicFS
