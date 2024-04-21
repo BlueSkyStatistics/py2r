@@ -34,7 +34,7 @@ def open(file_path, filetype, wsName, replace_ds, csvHeader, char_to_factor, bas
     else:
         content = content[0]
     if content == 0:   
-        for message in getrowcountcolprops(datasetName):
+        for message in getrowcountcolprops(datasetName,True, file_path):
             yield message["message"]
 
 
@@ -76,12 +76,12 @@ def load(datasetName):
     for message in getrowcountcolprops(datasetName):
         yield message["message"]
 
-def getrowcountcolprops(datasetName, reloadCols=True):
+def getrowcountcolprops(datasetName,reloadCols=True,file_path ="" ):
     rc, _ = execute_r(f'jsonlite::toJSON(nrow(.GlobalEnv${datasetName}))')
     rc = loads(rc[0])
     cc, _ = execute_r(f'jsonlite::toJSON(ncol(.GlobalEnv${datasetName}))')
     cc = loads(cc[0])
-    res = {"name": datasetName, "cols": [], "rowcount": rc[0], "colcount": cc[0], "type": "rccolprop"} #rccolprop = rowcount-colprop
+    res = {"name": datasetName, "cols": [], "rowcount": rc[0], "colcount": cc[0], "type": "rccolprop","file_path": file_path } #rccolprop = rowcount-colprop
     if reloadCols:
         for index in range(1, cc[0]+1):
             col_details_cmd = f"data=UAgetColProperties(dataSetNameOrIndex='.GlobalEnv${datasetName}', colNameOrIndex={index}, " \
