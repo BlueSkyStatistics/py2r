@@ -165,7 +165,7 @@ class RShell(cmd.Cmd):
                          "code": 500}))
 
     def do_quit(self, args):
-        print(dumps({"message": "Shitting down python backend", "type": "log"}))
+        print(dumps({"message": "Shutting down python backend", "type": "log"}))
         exit(0)
 
     def do_updatemodal(self, args):

@@ -167,7 +167,7 @@ def refresh(args):
                     "type": "exception", "code": 500}
 
 def quit(args):
-    yield {"message": "Shitting down python backend", "type": "halt"}
+    yield {"message": "Shutting down python backend", "type": "halt"}
 
 def updatemodal(args):
     args = loads(args)
