@@ -123,7 +123,7 @@ close(fp)""")
 
     def open(self, file_path=None, datasetName=None, encoding=None, cgid=None, wsName='NULL',
              replace_ds='TRUE', csvHeader='TRUE', char_to_factor='TRUE',
-             basket_data='FALSE', csv_sep=',', delim='.'):
+             basket_data='FALSE', csv_sep=',', delim='.', groupingchar=''):
         filetype = file_path.split(".")[-1].upper()
         worksheets = []
         if encoding is None:
@@ -164,7 +164,7 @@ sink(fp, type = "message")""")
                 for message in ds.open(file_path, filetype, wsName,
                                        replace_ds, csvHeader,
                                        char_to_factor, basket_data,
-                                       csv_sep, delim, datasetName,
+                                       csv_sep, delim, groupingchar, datasetName,
                                        encoding, cgid):
                     if message["type"] == "syntax":
                         open_cmd = message["message"]
