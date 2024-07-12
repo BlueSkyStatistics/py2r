@@ -11,7 +11,7 @@ def openblankdataset(datasetName):
     for message in getrowcountcolprops(datasetName):
         yield message["message"]
 
-def open(file_path, filetype, wsName, replace_ds, csvHeader, char_to_factor, basket_data, csv_sep, delim, datasetName, encoding, cgid):
+def open(file_path, filetype, wsName, replace_ds, csvHeader, char_to_factor, basket_data, csv_sep, delim, groupingchar,datasetName, encoding, cgid):
     if filetype == 'SAV':
         filetype = 'SPSS'
     open_cmd = f"BSkyloadDataset(fullpathfilename='{file_path}', " \
@@ -25,6 +25,7 @@ def open(file_path, filetype, wsName, replace_ds, csvHeader, char_to_factor, bas
                     f"trimSPSStrailing=FALSE, " \
                     f"sepChar='{csv_sep}', " \
                     f"deciChar='{delim}', " \
+                    f"groupingChar='{groupingchar}', " \
                     f"encoding={encoding}, " \
                     f"datasetName='{datasetName}')"
     yield {"message": open_cmd, "name": datasetName, "type": "syntax", "error": "", "parent_id": cgid}

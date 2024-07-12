@@ -134,6 +134,7 @@ class RShell(cmd.Cmd):
             basket_data=FALSE,     ## this applies to market basket analysis because the data file for that is different
             csv_sep=',',           ## for CSV files. Which character is used as a separator in CSV (or txt) files
             delim='.',             ## I think fo CSV, which character is used for decimal in the data (eg. 123.4 OR 123,4)
+            groupingchar='',       ## grouping char 
             datasetName            ## this is the memory object name for the dataset (user friendly name). 'Dataset1', 'titanic'. in
         """
         try:
