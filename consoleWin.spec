@@ -70,8 +70,8 @@ block_cipher = None
 
 a = Analysis(['console.py'],
              pathex=[
-                 'D:\\BSky\\Projects\\BSSElectron\\BlueSkyJS\\py2rbackend\\venv\\Lib\\site-packages',
-                 'D:\\BSky\\Projects\\BSSElectron\\BlueSkyJS\\py2rbackend'
+                 'D:\\BSky\\Projects\\BlueSkyJS\\py2rbackend\\venv\\Lib\\site-packages',
+                 'D:\\BSky\\Projects\\BlueSkyJS\\py2rbackend'
                  ],
              binaries=binaries,
              datas=datas,
