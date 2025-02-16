@@ -37,7 +37,14 @@ class RShell(cmd.Cmd):
         for message in self.r.initiate_libs():
             print(dumps(message))
         # print(dumps({"message": f"Libs initialized: {int(time()-start)}", "type": "log"}))
-        print(dumps({"message": "initialized", "type": "init_done"}))
+        print(dumps({"message": "initialized", "type": "init_done"}))             
+        rversioncmd = "RMajorMinorver =list(major = R.version$major, minor = R.version$minor)"  
+        execute_r(rversioncmd)
+        rc, _ = execute_r("jsonlite::toJSON(RMajorMinorver, na = NULL)")
+        r_version = loads(rc[0]) 
+        print(dumps({"message": r_version, "type": "rversion"}))
+
+
 
     def emptyline(self):
         try:
@@ -198,6 +205,9 @@ class RShell(cmd.Cmd):
                          "type": "exception",
                          "code": 500}))
 
+   
+    
+    
     def do_check_installed(self, args):
         result = {}
         try:
