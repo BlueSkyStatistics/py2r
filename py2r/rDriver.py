@@ -215,9 +215,11 @@ close(fp)""")
                     "parent_id": cgid
                 }
 
-    def refresh(self, datasetName, reloadCols=True, fromrowidx=1, torowidx=20):
+    def refresh(self, datasetName: str, reloadCols: bool = True, fromrowidx: int = 1, torowidx: int = 20,
+                digits: int = 'NA'):
         try:
-            for message in ds.refresh(datasetName, reloadCols, fromrowidx, torowidx):
+            for message in ds.refresh(datasetName=datasetName, reloadCols=reloadCols, fromrowidx=fromrowidx,
+                                      torowidx=torowidx, digits=digits):
                 yield message
         except:
             yield {"message": format_exc(), "type": "log"}
