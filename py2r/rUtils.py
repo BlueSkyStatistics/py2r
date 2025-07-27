@@ -2,6 +2,9 @@ import random
 import string
 from .pylogger import logger
 
+
+from rpy2.robjects import vectors
+
 try:
     logger.info("initializing R...")
     logger.info("If you do not see a success message below this message then that means R failed to launch.")
@@ -23,6 +26,32 @@ def str2bool(eval):
     if eval.lower() in ['true', '1', 'yes', 'y']:
         return True
     return False
+
+
+# Convert ListVector to plain Python dict
+def listvector_to_dict(lv):
+    result = {}
+    for i, key in enumerate(lv.names):
+        item = lv[i]  # access by index, NOT key
+        sub_dict = {}
+        for j, subkey in enumerate(item.names):
+            val = item[j]  # also access by index
+            # Convert R scalar string to Python str
+            sub_dict[subkey] = str(val[0]) if len(val) > 0 else None
+        result[key] = sub_dict
+    return result
+
+def execute_r_complete_list(cmd, eval=True, limit=20):
+    message = robjects.r(cmd)
+    message = listvector_to_dict(message)
+    if str2bool(eval):
+        # message, return_type = convert_to_data(message, limit)
+        logger.info("the rain in spain limit" +str(limit))
+        return_type ="list"
+    else:
+        message = str(message)
+        return_type = 'console'
+    return message, return_type
 
 
 def execute_r(cmd, eval=True, limit=20):

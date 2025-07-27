@@ -3,6 +3,7 @@ from sys import exit, stdin, stdout
 from json import loads, dumps, decoder
 from traceback import format_exc
 from py2r.pylogger import logger
+from py2r.rUtils import execute_r_complete_list
 
 try:
     logger.info('importing execute_r from rutils and init. R')
@@ -190,6 +191,30 @@ class RShell(cmd.Cmd):
                          "code": 500}))
             content = ""
         print(dumps({"element_id": args["element_id"], "content": content, "type": "modalUpdate"}))
+
+
+
+    def do_getautocompletestrings(self, args):
+        args = loads(args)
+        logger.info("the rain in spain get_autocomplete_strings" )
+        try:
+            # logger.info("the rain in spain get_autocomplete_strings" +args["element_id"])
+           
+            content = execute_r_complete_list(args["cmd"], eval=True, limit=-1)
+            #if content[1] == 'NILSXP':
+             #   content = ""
+            #else:
+             #   content = content[0]
+        except Exception:
+            print(dumps({"message": f"DATA_EXCEPTION (do_getautocompletestrings): {format_exc()}\n command: {args['cmd']}",
+                         "type": "exception",
+                         "code": 500}))
+            content = ""
+        print(dumps({"element_id": args["element_id"], "content": content, "type": "rconsole_autocomplete"}))
+
+
+
+
 
     def do_clone(self, args):
         if nogit:

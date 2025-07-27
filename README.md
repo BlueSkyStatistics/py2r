@@ -10,7 +10,9 @@ Curenly we are running on latest version of rpy2
 
 ### Installation
 1. Python 3.7 - 3.8
-2. Activate [venv](https://docs.python.org/3/library/venv.html) to play safe
+2. Activate [venv](
+    
+) to play safe
 3. install rpy2 `pip install rpy2==3.4.4 websockets==9.1`
 4. install `pip install certifi==2021.10.8`
 5. install `pip install urllib3==1.26.9`

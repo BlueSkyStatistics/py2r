@@ -259,6 +259,7 @@ dev.off()""")
 options("warn" = 1)
 sink(fp)
 sink(fp, type = "message")""")
+            # logger.info(stringified)
             # Executing R
             res = r(f"""
 dev.set(2)

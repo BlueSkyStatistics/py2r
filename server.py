@@ -3,6 +3,7 @@ from json import loads, dumps, decoder
 from traceback import format_exc
 from py2r.rDriver import RDriver
 from py2r.rUtils import execute_r
+from py2r.pylogger import logger
 
 import asyncio
 from rinterface_lib.callbacks import yesnocancel
