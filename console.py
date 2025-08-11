@@ -212,6 +212,25 @@ class RShell(cmd.Cmd):
             content = ""
         print(dumps({"element_id": args["element_id"], "content": content, "type": "rconsole_autocomplete"}))
 
+    def do_getpackagesforautocomplete(self, args):
+            args = loads(args)
+            logger.info("the rain in spain getpackagesforautocomplete" )
+            try:
+                # logger.info("the rain in spain get_autocomplete_strings" +args["element_id"])
+            
+                content = execute_r(args["cmd"], eval=True)
+                if content[1] == 'NILSXP':
+                   content = ""
+                else:
+                   content = content[0]
+            except Exception:
+                print(dumps({"message": f"DATA_EXCEPTION (do_getpackagesforautocomplete): {format_exc()}\n command: {args['cmd']}",
+                            "type": "exception",
+                            "code": 500}))
+                content = ""
+            print(dumps({"element_id": args["element_id"], "content": content, "type": "rconsole_getpackagesforautocomplete"}))
+
+        
 
 
 

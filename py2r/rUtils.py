@@ -47,6 +47,7 @@ def execute_r_complete_list(cmd, eval=True, limit=20):
     if str2bool(eval):
         # message, return_type = convert_to_data(message, limit)
         logger.info("the rain in spain limit" +str(limit))
+        logger.info("the rain in spain limit2" +str(len(message)))
         return_type ="list"
     else:
         message = str(message)
