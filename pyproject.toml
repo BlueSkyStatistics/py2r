@@ -1,0 +1,22 @@
+[project]
+name = "py2rbackend"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "astunparse>=1.6.3",
+    "certifi>=2025.8.3",
+    "paramiko>=4.0.0",
+    "pyinstaller>=6.15.0",
+    "pyrserve>=1.0.4",
+    "rpy2>=3.6.2",
+    "six>=1.17.0",
+    "urllib3>=2.5.0",
+    "websockets>=15.0.1",
+]
+
+[dependency-groups]
+dev = [
+    "requests>=2.32.5",
+]

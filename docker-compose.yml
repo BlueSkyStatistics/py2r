@@ -1,0 +1,19 @@
+services:
+  bluesky-unified:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bluesky-unified
+    volumes:
+      # Shared volume for file exchange with host
+      - ./shared:/shared
+      # Optional: persist R packages across container rebuilds
+      - ./r-packages:/usr/local/lib/R/site-library
+      - ./console_http.py:/app/console_http.py
+    ports:
+      - "8000:8000"  # HTTP server port for Electron communication
+    environment:
+      - R_LIBS_USER=/usr/local/lib/R/site-library
+      # Optional: if you need to set specific R environment variables
+      - R_HOME=/usr/local/lib/R
+      - R_HOME_DIR=/usr/local/lib/R
