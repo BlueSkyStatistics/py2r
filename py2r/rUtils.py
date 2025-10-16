@@ -26,7 +26,9 @@ def str2bool(eval):
 
 
 def execute_r(cmd, eval=True, limit=20):
+    #logger.info(f"execute_r: {cmd}")
     message = robjects.r(cmd)
+    #logger.info(f"execute_r: {message}")
     if str2bool(eval):
         message, return_type = convert_to_data(message, limit)
     else:
