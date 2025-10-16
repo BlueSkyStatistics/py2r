@@ -131,8 +131,9 @@ close(fp)""")
         else:
             encoding = f'"{encoding}"'
         if filetype in ('XLS', 'XLSX') and wsName == 'NULL':
-            worksheets, _ = execute_r(f'GetTableList(excelfilename="{file_path}", xlsx={str("XLSX" in filetype).upper()})')
-        if len(worksheets) >= 1: # prompt wsName
+            #worksheets, _ = execute_r(f'GetTableList(excelfilename="{file_path}", xlsx={str("XLSX" in filetype).upper()})')
+            worksheets, _ = execute_r(f"readxl::excel_sheets('{file_path}')")
+        if worksheets is not None and len(worksheets) >= 1: # prompt wsName
             yield {
                 "message": worksheets,
                 "type": 'worksheets',
@@ -153,7 +154,7 @@ close(fp)""")
                 }
             }
         output_buffer = ""    
-        if len(worksheets) == 0 or wsName != 'NULL':
+        if worksheets is not None and len(worksheets) == 0 or wsName != 'NULL':
             # open sink
             r(f"""fp <- file("{self.sinkfile}", open = "wt", encoding = "UTF-8")
 options("warn" = 1)
