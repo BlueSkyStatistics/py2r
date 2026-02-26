@@ -71,8 +71,9 @@ block_cipher = None
 
 a = Analysis(['console.py'],
              pathex=[
-                 '/Users/arozumenko/Development/analytics/BlueSkyJS/py2rbackend/venv/lib/python3.8/site-packages',
-                 '/Users/arozumenko/Development/analytics/BlueSkyJS/py2rbackend'],
+                 '/Users/anild/Projects/BSkyJS-master/BlueSkyJS1039/py2rbackend/venv/lib/python3.8/site-packages',
+                 '/Users/anild/Projects/BSkyJS-master/BlueSkyJS1039/py2rbackend',
+                 '.'],
              binaries=binaries,
              datas=datas,
              hiddenimports=hiddenimports,
