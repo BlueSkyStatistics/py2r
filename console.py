@@ -213,7 +213,19 @@ class RShell(cmd.Cmd):
         print(dumps({"element_id": args["element_id"], "content": content, "type": "rconsole_autocomplete"}))
 
 
-
+    # Write a do_getpackagesforautocomplete method
+    def do_getpackagesforautocomplete(self, args):
+        args = loads(args)
+        logger.info("the rain in spain get_packages_for_autocomplete" )
+        try:
+            content = execute_r_complete_list(args["cmd"], eval=True, limit=-1)
+            
+        except Exception:
+            print(dumps({"message": f"DATA_EXCEPTION (do_getpackagesforautocomplete): {format_exc()}\n command: {args['cmd']}",
+                         "type": "exception",
+                         "code": 500}))
+            content = ""
+        print(dumps({"element_id": args["element_id"], "content": content, "type": "rconsole_packages_autocomplete"}))
 
 
     def do_clone(self, args):
