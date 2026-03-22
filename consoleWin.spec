@@ -61,6 +61,11 @@ datas += tmp_ret[0]
 binaries += tmp_ret[1]
 hiddenimports += tmp_ret[2]
 
+binaries +=  [
+    (r"C:\\Windows\\SysWOW64\\msvcp140.dll", "."),
+	(r"C:\\Windows\\SysWOW64\\ucrtbase.dll", ".")
+]
+
 print(datas)
 print(binaries)
 print(hiddenimports)
@@ -70,8 +75,8 @@ block_cipher = None
 
 a = Analysis(['console.py'],
              pathex=[
-                 'D:\\BSky\\Projects\\BlueSkyJS\\py2rbackend\\venv\\Lib\\site-packages',
-                 'D:\\BSky\\Projects\\BlueSkyJS\\py2rbackend'
+                 'D:\\Projects\\BlueSkyJS-Master\\BlueSkyJS\\py2rbackend\\venv\\Lib\\site-packages',
+                 'D:\\Projects\\BlueSkyJS-Master\\BlueSkyJS\\py2rbackend'
                  ],
              binaries=binaries,
              datas=datas,
