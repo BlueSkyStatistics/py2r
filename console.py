@@ -82,7 +82,19 @@ class RShell(cmd.Cmd):
                          "type": "exception",
                          "code": 400}))
 
-    def do_md(self, args): 
+    def do_pastecells(self, args):
+        logger.info('Bla bla bla')
+        logger.info(f"do_pastecells args: {args}")
+        #print(dumps({"message": f"do_pastecells entered: {args}", "type": "log"}))
+        try:
+            for message in self.r.paste_datagrid(**loads(args)):
+                print(dumps(message))
+        except:
+            print(dumps({"message": f"CLIENT_EXCEPTION (pastecells): {format_exc()}",
+                         "type": "exception",
+                         "code": 400}))
+
+    def do_md(self, args):
         args = loads(args)
         print(dumps({
                     "message": str(args['cmd']),
@@ -169,6 +181,19 @@ class RShell(cmd.Cmd):
                          "code": 400}))
         except Exception:
             print(dumps({"message": f"DATA_EXCEPTION (refresh): {format_exc()}",
+                         "type": "exception",
+                         "code": 500}))
+
+    def do_getcell(self, args):
+        try:
+            for message in self.r.getcell(**loads(args)):
+                print(dumps(message))
+        except decoder.JSONDecodeError:
+            print(dumps({"message": f"CLIENT_EXCEPTION (getcell): unexpected command format {args}",
+                         "type": "exception",
+                         "code": 400}))
+        except Exception:
+            print(dumps({"message": f"DATA_EXCEPTION (getcell): {format_exc()}",
                          "type": "exception",
                          "code": 500}))
 
