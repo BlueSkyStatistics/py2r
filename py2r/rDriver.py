@@ -223,6 +223,32 @@ close(fp)""")
         except:
             yield {"message": format_exc(), "type": "log"}
 
+    def paste_datagrid(self, startRow: int, startCol: int, datasetName: str,
+                       fromrowidx: int = 1, torowidx: int = 20, digits: str = 'NA'):
+        try:
+            result = r(f"BSkyMultipleEditDataGrid(startRow={startRow}, startCol={startCol}, dataSetNameOrIndex='{datasetName}')")
+            needs_refresh = bool(result[0])
+            logger.info(f"Value of needs_refresh: {needs_refresh}")
+            if needs_refresh:
+                for msg in ds.refresh(datasetName=datasetName, reloadCols=True,
+                                      fromrowidx=fromrowidx, torowidx=torowidx, digits=digits):
+                    logger.info(f"paste_datagrid yielding msg keys: {list(msg.keys())}, refresh={msg.get('refresh')}")
+                    yield msg
+                logger.info("paste_datagrid ds.refresh loop complete")
+            else:
+                yield {"type": "pasteComplete", "needsGridRefresh": False, "name": datasetName}
+        except:
+            logger.info(f"paste_datagrid exception: {format_exc()}")
+            yield {"message": f"paste_datagrid error: {format_exc()}", "type": "exception", "code": 500}
+
+    def getcell(self, datasetName: str, row: int, col: int, digits: str = 'NA'):
+        try:
+            for message in ds.getcell(datasetName=datasetName, row=row, col=col, digits=digits):
+                yield message
+        except:
+            yield {"message": format_exc(), "type": "log"}
+
+
     @staticmethod
     def close_devices():
         # Weird workaround to make ggplot work
