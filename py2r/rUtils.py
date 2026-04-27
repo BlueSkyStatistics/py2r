@@ -2,6 +2,7 @@ import random
 import string
 from .pylogger import logger
 
+from rpy2.rinterface_lib.sexp import NULLType
 
 from rpy2.robjects import vectors
 
@@ -30,6 +31,11 @@ def str2bool(eval):
 
 # Convert ListVector to plain Python dict
 def listvector_to_dict(lv):
+    # if Lv.names is null, trat it like an unnamed list and use indices
+    names = lv.names
+    if isinstance(names, NULLType) or names is None:
+        return {str(i): lv[i] for i in range(len(lv))}
+    
     result = {}
     for i, key in enumerate(lv.names):
         item = lv[i]  # access by index, NOT key
@@ -41,9 +47,22 @@ def listvector_to_dict(lv):
         result[key] = sub_dict
     return result
 
+# delete my comments below...
 def execute_r_complete_list(cmd, eval=True, limit=20):
+    # cmd is string containing R command
+    # robjects.r executes the R command and returns the result
     message = robjects.r(cmd)
-    message = listvector_to_dict(message)
+
+    # converting to python dictionary (name: value)
+
+    try: 
+        message = listvector_to_dict(message)
+    except Exception as e:
+        logger.exception("Error converting R ListVector to dict in rUtils.py")
+        raise
+
+    # if eval is true, convert to data structure
+
     if str2bool(eval):
         # message, return_type = convert_to_data(message, limit)
         logger.info("the rain in spain limit" +str(limit))
