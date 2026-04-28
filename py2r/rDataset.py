@@ -84,8 +84,24 @@ def load(datasetName):
     for message in getrowcountcolprops(datasetName):
         yield message["message"]
 
+def getcell(datasetName: str, row: int, col: int, digits: str = 'NA'):
+    # row and col are 1-based (R indexing). col is the data column index
+    # (1 = first data column, matching SlickGrid's editCommand.c).
+    r_cmd = f'jsonlite::toJSON(.GlobalEnv${datasetName}[[{col}]][{row}], na=NULL, digits={digits})'
+    value, _ = execute_r(r_cmd)
+    cell_value = loads(value[0])
+    if isinstance(cell_value, list) and len(cell_value) > 0:
+        cell_value = cell_value[0]
+    yield {
+        "type": "cellupdate",
+        "datasetName": datasetName,
+        "row": row,
+        "col": col,
+        "value": cell_value
+    }
 
-def getrowcountcolprops(datasetName, reloadCols=True, file_path=""):
+
+def getrowcountcolprops(datasetName,reloadCols=True,file_path ="" ):
     rc, _ = execute_r(f'jsonlite::toJSON(nrow(.GlobalEnv${datasetName}))')
     rc = loads(rc[0])
     cc, _ = execute_r(f'jsonlite::toJSON(ncol(.GlobalEnv${datasetName}))')
