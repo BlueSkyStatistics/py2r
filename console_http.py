@@ -14,6 +14,10 @@ import atexit
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 import logging
+from typing import Protocol, Iterable, ClassVar, Dict, Type, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from typing import Any
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -43,6 +47,220 @@ except:
     nogit = True
 
 
+# ---------------------------------------------------------------------------
+# Command handlers
+#
+# Each wire ``command_type`` is implemented as a subclass of the
+# :class:`CommandHandler` protocol. Handlers are stateless objects that
+# receive the active :class:`RShellHTTP` instance (for access to the R
+# driver and cached initialization messages) together with the already
+# parsed JSON arguments, and yield one or more result messages.
+#
+# Adding a new command is as simple as declaring a new subclass with a
+# ``command_type`` class attribute and implementing :meth:`handle` -- the
+# registry at the bottom of this section will pick it up automatically.
+# ---------------------------------------------------------------------------
+
+
+class CommandHandler(Protocol):
+    """Protocol for a single ``command_type`` handler.
+
+    Implementations are registered in :data:`COMMAND_HANDLERS` and invoked
+    by :meth:`RShellHTTP.process_command`.
+    """
+
+    command_type: ClassVar[str]
+
+    def handle(self, shell: "RShellHTTP", args: dict) -> Iterable[dict]:
+        """Yield result messages for the given parsed ``args``."""
+        ...
+
+
+class _OrderedMessageMixin:
+    """Helper that tags non-log messages with a monotonically increasing ``count``."""
+
+    @staticmethod
+    def _with_order(messages: Iterable[dict]) -> Iterable[dict]:
+        message_order = 0
+        for message in messages:
+            if message["type"] != 'log':
+                message["count"] = message_order
+                message_order += 1
+            yield message
+
+
+class RCommandHandler(_OrderedMessageMixin):
+    """Execute R code through the shared :class:`RDriver`."""
+
+    command_type: ClassVar[str] = 'r'
+
+    def handle(self, shell: "RShellHTTP", args: dict) -> Iterable[dict]:
+        yield from self._with_order(shell.r.run(**args))
+
+
+class RHelpCommandHandler:
+    """Execute an R help command; messages are returned as-is (no ordering)."""
+
+    command_type: ClassVar[str] = 'rhelp'
+
+    def handle(self, shell: "RShellHTTP", args: dict) -> Iterable[dict]:
+        yield from shell.r.run(**args)
+
+
+class PyCommandHandler(_OrderedMessageMixin):
+    """Execute a Python snippet via :func:`run_py`."""
+
+    command_type: ClassVar[str] = 'py'
+
+    def handle(self, shell: "RShellHTTP", args: dict) -> Iterable[dict]:
+        yield from self._with_order(run_py(**args))
+
+
+class MarkdownCommandHandler:
+    """Wrap a markdown payload as a single ``markdown`` message."""
+
+    command_type: ClassVar[str] = 'md'
+
+    def handle(self, shell: "RShellHTTP", args: dict) -> Iterable[dict]:
+        yield {
+            "message": str(args['cmd']),
+            "caption": "",
+            "type": "markdown",
+            "code": 200,
+            "updateDataSet": False,
+            "name": args.get('datasetName', None),
+            "cmd": args['cmd'],
+            "eval": True,
+            "parent_id": args.get('parent_id', None),
+            "output_id": args.get('output_id', None),
+        }
+
+
+class OpenBlankDatasetCommandHandler:
+    """Open a blank dataset in the R driver."""
+
+    command_type: ClassVar[str] = 'openblankds'
+
+    def handle(self, shell: "RShellHTTP", args: dict) -> Iterable[dict]:
+        yield from shell.r.openblankds(**args)
+
+
+class OpenCommandHandler:
+    """Open a dataset in the R driver."""
+
+    command_type: ClassVar[str] = 'open'
+
+    def handle(self, shell: "RShellHTTP", args: dict) -> Iterable[dict]:
+        yield from shell.r.open(**args)
+
+
+class RefreshCommandHandler:
+    """Refresh the currently open dataset."""
+
+    command_type: ClassVar[str] = 'refresh'
+
+    def handle(self, shell: "RShellHTTP", args: dict) -> Iterable[dict]:
+        yield from shell.r.refresh(**args)
+
+
+class UpdateModalCommandHandler:
+    """Evaluate R code and emit a ``modalUpdate`` message for the client."""
+
+    command_type: ClassVar[str] = 'updatemodal'
+
+    def handle(self, shell: "RShellHTTP", args: dict) -> Iterable[dict]:
+        content = execute_r(args["cmd"], eval=True)
+        if content[1] == 'NILSXP':
+            content = ""
+        else:
+            content = content[0]
+        yield {
+            "element_id": args["element_id"],
+            "content": content,
+            "type": "modalUpdate",
+        }
+
+
+class CloneCommandHandler:
+    """Clone a git repository via :func:`clone_repo`, if git is available."""
+
+    command_type: ClassVar[str] = 'clone'
+
+    def handle(self, shell: "RShellHTTP", args: dict) -> Iterable[dict]:
+        if nogit:
+            yield {
+                "message": "git was not able to load due to exception on import",
+                "type": "exception",
+                "code": 500,
+            }
+            return
+        clone_repo(args)
+        yield {"content": "done", "type": "git_clone"}
+
+
+class CheckInstalledCommandHandler:
+    """Return the set of installed (non-priority) R packages."""
+
+    command_type: ClassVar[str] = 'check_installed'
+
+    _R_SCRIPT: ClassVar[str] = (
+        "ip = as.data.frame(installed.packages()[,c(1,3:4)])\n"
+        "    ip = ip[is.na(ip$Priority),1:2,drop=FALSE]\n"
+        "    ip\n                    "
+    )
+
+    def handle(self, shell: "RShellHTTP", args: dict) -> Iterable[dict]:
+        result: dict = {}
+        try:
+            content = execute_r(self._R_SCRIPT, eval=True, limit=-1)
+            if content[1] != 'NILSXP':
+                rows = content[0]
+                for record in rows[1:]:
+                    result[record[0]] = record[1]
+        except Exception:
+            pass
+        yield {"content": result, "type": "installedPackages"}
+
+
+class InitCommandHandler:
+    """Replay the cached initialization messages collected at startup."""
+
+    command_type: ClassVar[str] = 'init'
+
+    def handle(self, shell: "RShellHTTP", args: dict) -> Iterable[dict]:
+        yield from shell.init_messages
+
+
+def _build_handler_registry(
+    *handler_classes: Type[CommandHandler],
+) -> Dict[str, CommandHandler]:
+    """Instantiate the given handler classes and key them by ``command_type``."""
+    registry: Dict[str, CommandHandler] = {}
+    for handler_cls in handler_classes:
+        cmd_type = handler_cls.command_type
+        if cmd_type in registry:
+            raise ValueError(
+                f"Duplicate command handler registration for {cmd_type!r}"
+            )
+        registry[cmd_type] = handler_cls()
+    return registry
+
+
+COMMAND_HANDLERS: Dict[str, CommandHandler] = _build_handler_registry(
+    RCommandHandler,
+    RHelpCommandHandler,
+    PyCommandHandler,
+    MarkdownCommandHandler,
+    OpenBlankDatasetCommandHandler,
+    OpenCommandHandler,
+    RefreshCommandHandler,
+    UpdateModalCommandHandler,
+    CloneCommandHandler,
+    CheckInstalledCommandHandler,
+    InitCommandHandler,
+)
+
+
 class RShellHTTP:
     """HTTP-compatible version of RShell"""
 
@@ -67,125 +285,34 @@ class RShellHTTP:
         logger.info("RShellHTTP initialized successfully")
 
     def process_command(self, command_type, args_json):
-        """Process a command and return results"""
-        results = []
-        message_order = 0
-
+        """Process a command and return results by dispatching to a handler."""
         print(f'Processing command: {command_type} with args: {args_json}')
 
         try:
             args = json.loads(args_json) if args_json else {}
 
-            if command_type == 'r':
-                for message in self.r.run(**args):
-                    if message["type"] != 'log':
-                        message["count"] = message_order
-                        message_order += 1
-                    results.append(message)
-
-            elif command_type == 'rhelp':
-                for message in self.r.run(**args):
-                    results.append(message)
-
-            elif command_type == 'py':
-                for message in run_py(**args):
-                    if message["type"] != 'log':
-                        message["count"] = message_order
-                        message_order += 1
-                    results.append(message)
-
-            elif command_type == 'md':
-                results.append({
-                    "message": str(args['cmd']),
-                    "caption": "",
-                    "type": "markdown",
-                    "code": 200,
-                    "updateDataSet": False,
-                    "name": args.get('datasetName', None),
-                    "cmd": args['cmd'],
-                    "eval": True,
-                    "parent_id": args.get('parent_id', None),
-                    "output_id": args.get('output_id', None),
-                })
-
-            elif command_type == 'openblankds':
-                for message in self.r.openblankds(**args):
-                    results.append(message)
-
-            elif command_type == 'open':
-                for message in self.r.open(**args):
-                    results.append(message)
-
-            elif command_type == 'refresh':
-                for message in self.r.refresh(**args):
-                    results.append(message)
-
-            elif command_type == 'updatemodal':
-                content = execute_r(args["cmd"], eval=True)
-                if content[1] == 'NILSXP':
-                    content = ""
-                else:
-                    content = content[0]
-                results.append({
-                    "element_id": args["element_id"],
-                    "content": content,
-                    "type": "modalUpdate"
-                })
-
-            elif command_type == 'clone':
-                if nogit:
-                    results.append({
-                        "message": "git was not able to load due to exception on import",
-                        "type": "exception",
-                        "code": 500
-                    })
-                else:
-                    clone_repo(args)
-                    results.append({"content": "done", "type": "git_clone"})
-
-            elif command_type == 'check_installed':
-                result = {}
-                try:
-                    cmd = """ip = as.data.frame(installed.packages()[,c(1,3:4)])
-    ip = ip[is.na(ip$Priority),1:2,drop=FALSE]
-    ip
-                    """
-                    content = execute_r(cmd, eval=True, limit=-1)
-                    if content[1] != 'NILSXP':
-                        content = content[0]
-                        for record in content[1:]:
-                            result[record[0]] = record[1]
-                except:
-                    pass
-                results.append({"content": result, "type": "installedPackages"})
-
-            elif command_type == 'init':
-                # Return initialization messages
-                results.extend(self.init_messages)
-
-            else:
-                results.append({
+            handler = COMMAND_HANDLERS.get(command_type)
+            if handler is None:
+                return [{
                     "message": f"Unknown command type: {command_type}",
                     "type": "exception",
-                    "code": 400
-                })
+                    "code": 400,
+                }]
+
+            return list(handler.handle(self, args))
 
         except Exception as e:
-            results.append({
-                "message": f"Command execution error: {str(e)}\n{command_type=}\n{args_json=}\n\n{format_exc()}",
+            return [{
+                "message": (
+                    f"Command execution error: {str(e)}\n"
+                    f"{command_type=}\n{args_json=}\n\n{format_exc()}"
+                ),
                 "format_exc": format_exc(),
                 "command_type": command_type,
                 "args_json": args_json,
                 "type": "exception",
-                "code": 500
-            })
-            # results.append({
-            #     "message": f"Command execution error: {format_exc()}",
-            #     "type": "exception",
-            #     "code": 500
-            # })
-
-        return results
+                "code": 500,
+            }]
 
 
 # Global RShell instance

@@ -42,6 +42,10 @@ ENV LD_LIBRARY_PATH=/usr/local/lib/R/lib:$LD_LIBRARY_PATH
 # Create shared directories
 RUN mkdir -p /shared /usr/local/lib/R/site-library
 
+# Install BlueSky R package from GitHub
+RUN Rscript -e "install.packages('remotes', repos='https://cloud.r-project.org/')" && \
+    Rscript -e "remotes::install_github('BlueSkyStatistics/BlueSky')"
+
 # Set working directory for Python app
 WORKDIR /app
 
