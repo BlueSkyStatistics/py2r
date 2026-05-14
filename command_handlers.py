@@ -14,7 +14,6 @@
 from typing import Protocol, Iterable, ClassVar, Dict, Type, Any
 from traceback import format_exc
 
-from py2r.git_market import clone_repo
 from py2r.pyConsole import run_py
 from py2r.pylogger import logger
 from py2r.rUtils import execute_r, execute_r_complete_list
@@ -213,21 +212,20 @@ class CloneCommandHandler:
     def __init__(self):
         try:
             from py2r.git_market import clone_repo
-            self.git_available = True
+            self.clone_repo = clone_repo
         except Exception as e:
-            self.git_available = False
+            self.clone_repo = None
             self.exc = str(e)
 
     def handle(self, shell: 'RShellBase', args: dict) -> Iterable[dict]:
-        if not self.git_available:
-            yield {
-                "message": "GIT_CONFIG (clone): git was not able to load due to exception on import",
-                "type": "exception",
-                "code": 500,
-            }
-            return
-        clone_repo(args)
-        yield {"content": "done", "type": "git_clone"}
+        if self.clone_repo:
+            self.clone_repo(args)
+            yield {"content": "done", "type": "git_clone"}
+        yield {
+            "message": "GIT_CONFIG (clone): git was not able to load due to exception on import",
+            "type": "exception",
+            "code": 500,
+        }
 
 
 class CheckInstalledCommandHandler:
@@ -252,15 +250,6 @@ class CheckInstalledCommandHandler:
         except Exception:
             pass
         yield {"content": result, "type": "installedPackages"}
-
-
-class InitCommandHandler:
-    """Replay the cached initialization messages collected at startup."""
-
-    command_type: ClassVar[str] = 'init'
-
-    def handle(self, shell: 'RShellBase', args: dict) -> Iterable[dict]:
-        yield from shell.init_messages
 
 
 def _build_handler_registry(
@@ -293,5 +282,4 @@ COMMAND_HANDLERS: Dict[str, CommandHandler] = _build_handler_registry(
     GetPackagesForAutocompleteCommandHandler,
     CloneCommandHandler,
     CheckInstalledCommandHandler,
-    InitCommandHandler,
 )
