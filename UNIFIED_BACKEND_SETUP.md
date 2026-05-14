@@ -60,8 +60,6 @@ uv sync
 ```
 
 ### 3. Configuration
-
-- Edit `config.py` and `config.json` as needed for your environment.
 - Ensure paths to R and Python executables are correct.
 
 ### 4. Running the Backend

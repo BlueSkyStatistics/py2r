@@ -4,289 +4,34 @@ HTTP-based console for Docker deployment
 Provides same functionality as console.py but via HTTP endpoints
 """
 
-import cmd
 import sys
 import json
 from traceback import format_exc
-from threading import Thread
 import signal
-import atexit
 from http.server import HTTPServer, BaseHTTPRequestHandler
-from urllib.parse import urlparse, parse_qs
-import logging
-from typing import Protocol, Iterable, ClassVar, Dict, Type, TYPE_CHECKING
+from urllib.parse import urlparse
+from py2r.pylogger import logger
 
-if TYPE_CHECKING:
-    from typing import Any
+from command_handlers import COMMAND_HANDLERS
+from r_shell_base import RShellBase
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-# from py2r.pylogger import logger
 
-# Set encoding
-sys.stdin.reconfigure(encoding='utf-8') if hasattr(sys.stdin, 'reconfigure') else None
-sys.stdout.reconfigure(encoding='utf-8') if hasattr(sys.stdout, 'reconfigure') else None
-
-# Use local R via rpy2 (as original behavior inside the container)
-try:
-    logger.info('importing execute_r from rutils and init. R')
-    from py2r.rUtils import execute_r
-except Exception as e:
-    logger.critical("error while importing execute_r")
-    raise e
-
-from py2r.pyConsole import run_py
-from py2r.rDriver import RDriver
-
-try:
-    from py2r.git_market import clone_repo
-
-    nogit = False
-except:
-    nogit = True
-
-
-# ---------------------------------------------------------------------------
-# Command handlers
-#
-# Each wire ``command_type`` is implemented as a subclass of the
-# :class:`CommandHandler` protocol. Handlers are stateless objects that
-# receive the active :class:`RShellHTTP` instance (for access to the R
-# driver and cached initialization messages) together with the already
-# parsed JSON arguments, and yield one or more result messages.
-#
-# Adding a new command is as simple as declaring a new subclass with a
-# ``command_type`` class attribute and implementing :meth:`handle` -- the
-# registry at the bottom of this section will pick it up automatically.
-# ---------------------------------------------------------------------------
-
-
-class CommandHandler(Protocol):
-    """Protocol for a single ``command_type`` handler.
-
-    Implementations are registered in :data:`COMMAND_HANDLERS` and invoked
-    by :meth:`RShellHTTP.process_command`.
-    """
-
-    command_type: ClassVar[str]
-
-    def handle(self, shell: "RShellHTTP", args: dict) -> Iterable[dict]:
-        """Yield result messages for the given parsed ``args``."""
-        ...
-
-
-class _OrderedMessageMixin:
-    """Helper that tags non-log messages with a monotonically increasing ``count``."""
-
-    @staticmethod
-    def _with_order(messages: Iterable[dict]) -> Iterable[dict]:
-        message_order = 0
-        for message in messages:
-            if message["type"] != 'log':
-                message["count"] = message_order
-                message_order += 1
-            yield message
-
-
-class RCommandHandler(_OrderedMessageMixin):
-    """Execute R code through the shared :class:`RDriver`."""
-
-    command_type: ClassVar[str] = 'r'
-
-    def handle(self, shell: "RShellHTTP", args: dict) -> Iterable[dict]:
-        yield from self._with_order(shell.r.run(**args))
-
-
-class RHelpCommandHandler:
-    """Execute an R help command; messages are returned as-is (no ordering)."""
-
-    command_type: ClassVar[str] = 'rhelp'
-
-    def handle(self, shell: "RShellHTTP", args: dict) -> Iterable[dict]:
-        yield from shell.r.run(**args)
-
-
-class PyCommandHandler(_OrderedMessageMixin):
-    """Execute a Python snippet via :func:`run_py`."""
-
-    command_type: ClassVar[str] = 'py'
-
-    def handle(self, shell: "RShellHTTP", args: dict) -> Iterable[dict]:
-        yield from self._with_order(run_py(**args))
-
-
-class MarkdownCommandHandler:
-    """Wrap a markdown payload as a single ``markdown`` message."""
-
-    command_type: ClassVar[str] = 'md'
-
-    def handle(self, shell: "RShellHTTP", args: dict) -> Iterable[dict]:
-        yield {
-            "message": str(args['cmd']),
-            "caption": "",
-            "type": "markdown",
-            "code": 200,
-            "updateDataSet": False,
-            "name": args.get('datasetName', None),
-            "cmd": args['cmd'],
-            "eval": True,
-            "parent_id": args.get('parent_id', None),
-            "output_id": args.get('output_id', None),
-        }
-
-
-class OpenBlankDatasetCommandHandler:
-    """Open a blank dataset in the R driver."""
-
-    command_type: ClassVar[str] = 'openblankds'
-
-    def handle(self, shell: "RShellHTTP", args: dict) -> Iterable[dict]:
-        yield from shell.r.openblankds(**args)
-
-
-class OpenCommandHandler:
-    """Open a dataset in the R driver."""
-
-    command_type: ClassVar[str] = 'open'
-
-    def handle(self, shell: "RShellHTTP", args: dict) -> Iterable[dict]:
-        yield from shell.r.open(**args)
-
-
-class RefreshCommandHandler:
-    """Refresh the currently open dataset."""
-
-    command_type: ClassVar[str] = 'refresh'
-
-    def handle(self, shell: "RShellHTTP", args: dict) -> Iterable[dict]:
-        yield from shell.r.refresh(**args)
-
-
-class UpdateModalCommandHandler:
-    """Evaluate R code and emit a ``modalUpdate`` message for the client."""
-
-    command_type: ClassVar[str] = 'updatemodal'
-
-    def handle(self, shell: "RShellHTTP", args: dict) -> Iterable[dict]:
-        content = execute_r(args["cmd"], eval=True)
-        if content[1] == 'NILSXP':
-            content = ""
-        else:
-            content = content[0]
-        yield {
-            "element_id": args["element_id"],
-            "content": content,
-            "type": "modalUpdate",
-        }
-
-
-class CloneCommandHandler:
-    """Clone a git repository via :func:`clone_repo`, if git is available."""
-
-    command_type: ClassVar[str] = 'clone'
-
-    def handle(self, shell: "RShellHTTP", args: dict) -> Iterable[dict]:
-        if nogit:
-            yield {
-                "message": "git was not able to load due to exception on import",
-                "type": "exception",
-                "code": 500,
-            }
-            return
-        clone_repo(args)
-        yield {"content": "done", "type": "git_clone"}
-
-
-class CheckInstalledCommandHandler:
-    """Return the set of installed (non-priority) R packages."""
-
-    command_type: ClassVar[str] = 'check_installed'
-
-    _R_SCRIPT: ClassVar[str] = (
-        "ip = as.data.frame(installed.packages()[,c(1,3:4)])\n"
-        "    ip = ip[is.na(ip$Priority),1:2,drop=FALSE]\n"
-        "    ip\n                    "
-    )
-
-    def handle(self, shell: "RShellHTTP", args: dict) -> Iterable[dict]:
-        result: dict = {}
-        try:
-            content = execute_r(self._R_SCRIPT, eval=True, limit=-1)
-            if content[1] != 'NILSXP':
-                rows = content[0]
-                for record in rows[1:]:
-                    result[record[0]] = record[1]
-        except Exception:
-            pass
-        yield {"content": result, "type": "installedPackages"}
-
-
-class InitCommandHandler:
-    """Replay the cached initialization messages collected at startup."""
-
-    command_type: ClassVar[str] = 'init'
-
-    def handle(self, shell: "RShellHTTP", args: dict) -> Iterable[dict]:
-        yield from shell.init_messages
-
-
-def _build_handler_registry(
-    *handler_classes: Type[CommandHandler],
-) -> Dict[str, CommandHandler]:
-    """Instantiate the given handler classes and key them by ``command_type``."""
-    registry: Dict[str, CommandHandler] = {}
-    for handler_cls in handler_classes:
-        cmd_type = handler_cls.command_type
-        if cmd_type in registry:
-            raise ValueError(
-                f"Duplicate command handler registration for {cmd_type!r}"
-            )
-        registry[cmd_type] = handler_cls()
-    return registry
-
-
-COMMAND_HANDLERS: Dict[str, CommandHandler] = _build_handler_registry(
-    RCommandHandler,
-    RHelpCommandHandler,
-    PyCommandHandler,
-    MarkdownCommandHandler,
-    OpenBlankDatasetCommandHandler,
-    OpenCommandHandler,
-    RefreshCommandHandler,
-    UpdateModalCommandHandler,
-    CloneCommandHandler,
-    CheckInstalledCommandHandler,
-    InitCommandHandler,
-)
-
-
-class RShellHTTP:
+class RShellHTTP(RShellBase):
     """HTTP-compatible version of RShell"""
 
     def __init__(self):
         logger.info("Initializing RShellHTTP...")
-        self.r = RDriver()
+        super().__init__()
 
-        # Initialize libs and get R version
-        self.init_messages = []
-        for message in self.r.initiate_libs():
-            self.init_messages.append(message)
-
-        self.init_messages.append({"message": "initialized", "type": "init_done"})
-
-        # Get R version
-        rversioncmd = "RMajorMinorver =list(major = R.version$major, minor = R.version$minor)"
-        execute_r(rversioncmd)
-        rc, _ = execute_r("jsonlite::toJSON(RMajorMinorver, na = NULL)")
-        r_version = json.loads(rc[0])
-        self.init_messages.append({"message": r_version, "type": "rversion"})
+        # Collect init messages for replay via /init endpoint
+        self.init_messages = list(self._init_libs())
+        self.init_messages.append(self._get_r_version())
 
         logger.info("RShellHTTP initialized successfully")
 
     def process_command(self, command_type, args_json):
         """Process a command and return results by dispatching to a handler."""
-        print(f'Processing command: {command_type} with args: {args_json}')
+        logger.info(f'Processing command: {command_type} with args: {args_json}')
 
         try:
             args = json.loads(args_json) if args_json else {}
