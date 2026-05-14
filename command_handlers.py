@@ -18,6 +18,7 @@ from py2r.git_market import clone_repo
 from py2r.pyConsole import run_py
 from py2r.pylogger import logger
 from py2r.rUtils import execute_r, execute_r_complete_list
+from r_shell_base import RShellBase
 
 
 class CommandHandler(Protocol):
@@ -29,7 +30,7 @@ class CommandHandler(Protocol):
 
     command_type: ClassVar[str]
 
-    def handle(self, shell: Any, args: dict) -> Iterable[dict]:
+    def handle(self, shell: 'RShellBase', args: dict) -> Iterable[dict]:
         """Yield result messages for the given parsed ``args``."""
         ...
 
@@ -52,7 +53,7 @@ class RCommandHandler(_OrderedMessageMixin):
 
     command_type: ClassVar[str] = 'r'
 
-    def handle(self, shell: Any, args: dict) -> Iterable[dict]:
+    def handle(self, shell: 'RShellBase', args: dict) -> Iterable[dict]:
         yield from self._with_order(shell.r.run(**args))
 
 
@@ -61,7 +62,7 @@ class RHelpCommandHandler:
 
     command_type: ClassVar[str] = 'rhelp'
 
-    def handle(self, shell: Any, args: dict) -> Iterable[dict]:
+    def handle(self, shell: 'RShellBase', args: dict) -> Iterable[dict]:
         yield from shell.r.run(**args)
 
 
@@ -70,7 +71,7 @@ class PyCommandHandler(_OrderedMessageMixin):
 
     command_type: ClassVar[str] = 'py'
 
-    def handle(self, shell: Any, args: dict) -> Iterable[dict]:
+    def handle(self, shell: 'RShellBase', args: dict) -> Iterable[dict]:
         yield from self._with_order(run_py(**args))
 
 
@@ -79,7 +80,7 @@ class MarkdownCommandHandler:
 
     command_type: ClassVar[str] = 'md'
 
-    def handle(self, shell: Any, args: dict) -> Iterable[dict]:
+    def handle(self, shell: 'RShellBase', args: dict) -> Iterable[dict]:
         yield {
             "message": str(args['cmd']),
             "caption": "",
@@ -99,7 +100,7 @@ class PasteCellsCommandHandler:
 
     command_type: ClassVar[str] = 'pastecells'
 
-    def handle(self, shell: Any, args: dict) -> Iterable[dict]:
+    def handle(self, shell: 'RShellBase', args: dict) -> Iterable[dict]:
         logger.info(f"pastecells args: {args}")
         yield from shell.r.paste_datagrid(**args)
 
@@ -109,7 +110,7 @@ class OpenBlankDatasetCommandHandler:
 
     command_type: ClassVar[str] = 'openblankds'
 
-    def handle(self, shell: Any, args: dict) -> Iterable[dict]:
+    def handle(self, shell: 'RShellBase', args: dict) -> Iterable[dict]:
         yield from shell.r.openblankds(**args)
 
 
@@ -118,7 +119,7 @@ class OpenCommandHandler:
 
     command_type: ClassVar[str] = 'open'
 
-    def handle(self, shell: Any, args: dict) -> Iterable[dict]:
+    def handle(self, shell: 'RShellBase', args: dict) -> Iterable[dict]:
         yield from shell.r.open(**args)
 
 
@@ -127,7 +128,7 @@ class RefreshCommandHandler:
 
     command_type: ClassVar[str] = 'refresh'
 
-    def handle(self, shell: Any, args: dict) -> Iterable[dict]:
+    def handle(self, shell: 'RShellBase', args: dict) -> Iterable[dict]:
         yield from shell.r.refresh(**args)
 
 
@@ -136,7 +137,7 @@ class GetCellCommandHandler:
 
     command_type: ClassVar[str] = 'getcell'
 
-    def handle(self, shell: Any, args: dict) -> Iterable[dict]:
+    def handle(self, shell: 'RShellBase', args: dict) -> Iterable[dict]:
         yield from shell.r.getcell(**args)
 
 
@@ -145,7 +146,7 @@ class UpdateModalCommandHandler:
 
     command_type: ClassVar[str] = 'updatemodal'
 
-    def handle(self, shell: Any, args: dict) -> Iterable[dict]:
+    def handle(self, shell: 'RShellBase', args: dict) -> Iterable[dict]:
         try:
             content = execute_r(args["cmd"], eval=True)
             if content[1] == 'NILSXP':
@@ -171,7 +172,7 @@ class GetAutocompleteStringsCommandHandler:
 
     command_type: ClassVar[str] = 'getautocompletestrings'
 
-    def handle(self, shell: Any, args: dict) -> Iterable[dict]:
+    def handle(self, shell: 'RShellBase', args: dict) -> Iterable[dict]:
         logger.info("get_autocomplete_strings")
         try:
             content = execute_r_complete_list(args["cmd"], eval=True, limit=-1)
@@ -190,7 +191,7 @@ class GetPackagesForAutocompleteCommandHandler:
 
     command_type: ClassVar[str] = 'getpackagesforautocomplete'
 
-    def handle(self, shell: Any, args: dict) -> Iterable[dict]:
+    def handle(self, shell: 'RShellBase', args: dict) -> Iterable[dict]:
         logger.info("get_packages_for_autocomplete")
         try:
             content = execute_r_complete_list(args["cmd"], eval=True, limit=-1)
@@ -217,7 +218,7 @@ class CloneCommandHandler:
             self.git_available = False
             self.exc = str(e)
 
-    def handle(self, shell: Any, args: dict) -> Iterable[dict]:
+    def handle(self, shell: 'RShellBase', args: dict) -> Iterable[dict]:
         if not self.git_available:
             yield {
                 "message": "GIT_CONFIG (clone): git was not able to load due to exception on import",
@@ -240,7 +241,7 @@ class CheckInstalledCommandHandler:
         "    ip\n                    "
     )
 
-    def handle(self, shell: Any, args: dict) -> Iterable[dict]:
+    def handle(self, shell: 'RShellBase', args: dict) -> Iterable[dict]:
         result: dict = {}
         try:
             content = execute_r(self._R_SCRIPT, eval=True, limit=-1)
@@ -258,7 +259,7 @@ class InitCommandHandler:
 
     command_type: ClassVar[str] = 'init'
 
-    def handle(self, shell: Any, args: dict) -> Iterable[dict]:
+    def handle(self, shell: 'RShellBase', args: dict) -> Iterable[dict]:
         yield from shell.init_messages
 
 

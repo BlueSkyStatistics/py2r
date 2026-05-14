@@ -13,30 +13,19 @@ from urllib.parse import urlparse
 from py2r.pylogger import logger
 
 from command_handlers import COMMAND_HANDLERS
-from py2r.rDriver import RDriver
-from py2r.rUtils import execute_r
+from r_shell_base import RShellBase
 
 
-class RShellHTTP:
+class RShellHTTP(RShellBase):
     """HTTP-compatible version of RShell"""
 
     def __init__(self):
         logger.info("Initializing RShellHTTP...")
-        self.r = RDriver()
+        super().__init__()
 
-        # Initialize libs and get R version
-        self.init_messages = []
-        for message in self.r.initiate_libs():
-            self.init_messages.append(message)
-
-        self.init_messages.append({"message": "initialized", "type": "init_done"})
-
-        # Get R version
-        rversioncmd = "RMajorMinorver =list(major = R.version$major, minor = R.version$minor)"
-        execute_r(rversioncmd)
-        rc, _ = execute_r("jsonlite::toJSON(RMajorMinorver, na = NULL)")
-        r_version = json.loads(rc[0])
-        self.init_messages.append({"message": r_version, "type": "rversion"})
+        # Collect init messages for replay via /init endpoint
+        self.init_messages = list(self._init_libs())
+        self.init_messages.append(self._get_r_version())
 
         logger.info("RShellHTTP initialized successfully")
 
