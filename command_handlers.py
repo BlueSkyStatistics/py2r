@@ -11,15 +11,13 @@
 # ``command_type`` class attribute and implementing :meth:`handle` -- the
 # registry at the bottom of this section will pick it up automatically.
 # ---------------------------------------------------------------------------
-from typing import Protocol, Iterable, ClassVar, Dict, Type, TYPE_CHECKING
+from typing import Protocol, Iterable, ClassVar, Dict, Type, Any
+from traceback import format_exc
 
-from console_http import RShellHTTP
 from py2r.git_market import clone_repo
 from py2r.pyConsole import run_py
-from py2r.rUtils import execute_r
-
-if TYPE_CHECKING:
-    from typing import Any
+from py2r.pylogger import logger
+from py2r.rUtils import execute_r, execute_r_complete_list
 
 
 class CommandHandler(Protocol):
@@ -31,7 +29,7 @@ class CommandHandler(Protocol):
 
     command_type: ClassVar[str]
 
-    def handle(self, shell: "RShellHTTP", args: dict) -> Iterable[dict]:
+    def handle(self, shell: Any, args: dict) -> Iterable[dict]:
         """Yield result messages for the given parsed ``args``."""
         ...
 
@@ -54,7 +52,7 @@ class RCommandHandler(_OrderedMessageMixin):
 
     command_type: ClassVar[str] = 'r'
 
-    def handle(self, shell: "RShellHTTP", args: dict) -> Iterable[dict]:
+    def handle(self, shell: Any, args: dict) -> Iterable[dict]:
         yield from self._with_order(shell.r.run(**args))
 
 
@@ -63,7 +61,7 @@ class RHelpCommandHandler:
 
     command_type: ClassVar[str] = 'rhelp'
 
-    def handle(self, shell: "RShellHTTP", args: dict) -> Iterable[dict]:
+    def handle(self, shell: Any, args: dict) -> Iterable[dict]:
         yield from shell.r.run(**args)
 
 
@@ -72,7 +70,7 @@ class PyCommandHandler(_OrderedMessageMixin):
 
     command_type: ClassVar[str] = 'py'
 
-    def handle(self, shell: "RShellHTTP", args: dict) -> Iterable[dict]:
+    def handle(self, shell: Any, args: dict) -> Iterable[dict]:
         yield from self._with_order(run_py(**args))
 
 
@@ -81,7 +79,7 @@ class MarkdownCommandHandler:
 
     command_type: ClassVar[str] = 'md'
 
-    def handle(self, shell: "RShellHTTP", args: dict) -> Iterable[dict]:
+    def handle(self, shell: Any, args: dict) -> Iterable[dict]:
         yield {
             "message": str(args['cmd']),
             "caption": "",
@@ -96,12 +94,22 @@ class MarkdownCommandHandler:
         }
 
 
+class PasteCellsCommandHandler:
+    """Paste cells into the datagrid via the R driver."""
+
+    command_type: ClassVar[str] = 'pastecells'
+
+    def handle(self, shell: Any, args: dict) -> Iterable[dict]:
+        logger.info(f"pastecells args: {args}")
+        yield from shell.r.paste_datagrid(**args)
+
+
 class OpenBlankDatasetCommandHandler:
     """Open a blank dataset in the R driver."""
 
     command_type: ClassVar[str] = 'openblankds'
 
-    def handle(self, shell: "RShellHTTP", args: dict) -> Iterable[dict]:
+    def handle(self, shell: Any, args: dict) -> Iterable[dict]:
         yield from shell.r.openblankds(**args)
 
 
@@ -110,7 +118,7 @@ class OpenCommandHandler:
 
     command_type: ClassVar[str] = 'open'
 
-    def handle(self, shell: "RShellHTTP", args: dict) -> Iterable[dict]:
+    def handle(self, shell: Any, args: dict) -> Iterable[dict]:
         yield from shell.r.open(**args)
 
 
@@ -119,8 +127,17 @@ class RefreshCommandHandler:
 
     command_type: ClassVar[str] = 'refresh'
 
-    def handle(self, shell: "RShellHTTP", args: dict) -> Iterable[dict]:
+    def handle(self, shell: Any, args: dict) -> Iterable[dict]:
         yield from shell.r.refresh(**args)
+
+
+class GetCellCommandHandler:
+    """Retrieve a single cell value from the R driver."""
+
+    command_type: ClassVar[str] = 'getcell'
+
+    def handle(self, shell: Any, args: dict) -> Iterable[dict]:
+        yield from shell.r.getcell(**args)
 
 
 class UpdateModalCommandHandler:
@@ -128,17 +145,63 @@ class UpdateModalCommandHandler:
 
     command_type: ClassVar[str] = 'updatemodal'
 
-    def handle(self, shell: "RShellHTTP", args: dict) -> Iterable[dict]:
-        content = execute_r(args["cmd"], eval=True)
-        if content[1] == 'NILSXP':
+    def handle(self, shell: Any, args: dict) -> Iterable[dict]:
+        try:
+            content = execute_r(args["cmd"], eval=True)
+            if content[1] == 'NILSXP':
+                content = ""
+            else:
+                content = content[0]
+        except Exception:
+            yield {
+                "message": f"DATA_EXCEPTION (updatemodal): {format_exc()}\n command: {args['cmd']}",
+                "type": "exception",
+                "code": 500,
+            }
             content = ""
-        else:
-            content = content[0]
         yield {
             "element_id": args["element_id"],
             "content": content,
             "type": "modalUpdate",
         }
+
+
+class GetAutocompleteStringsCommandHandler:
+    """Return R console autocomplete suggestions."""
+
+    command_type: ClassVar[str] = 'getautocompletestrings'
+
+    def handle(self, shell: Any, args: dict) -> Iterable[dict]:
+        logger.info("get_autocomplete_strings")
+        try:
+            content = execute_r_complete_list(args["cmd"], eval=True, limit=-1)
+        except Exception:
+            yield {
+                "message": f"DATA_EXCEPTION (getautocompletestrings): {format_exc()}\n command: {args['cmd']}",
+                "type": "exception",
+                "code": 500,
+            }
+            content = ""
+        yield {"element_id": args["element_id"], "content": content, "type": "rconsole_autocomplete"}
+
+
+class GetPackagesForAutocompleteCommandHandler:
+    """Return R package list for autocomplete."""
+
+    command_type: ClassVar[str] = 'getpackagesforautocomplete'
+
+    def handle(self, shell: Any, args: dict) -> Iterable[dict]:
+        logger.info("get_packages_for_autocomplete")
+        try:
+            content = execute_r_complete_list(args["cmd"], eval=True, limit=-1)
+        except Exception:
+            yield {
+                "message": f"DATA_EXCEPTION (getpackagesforautocomplete): {format_exc()}\n command: {args['cmd']}",
+                "type": "exception",
+                "code": 500,
+            }
+            content = ""
+        yield {"element_id": args["element_id"], "content": content, "type": "rconsole_packages_autocomplete"}
 
 
 class CloneCommandHandler:
@@ -154,13 +217,12 @@ class CloneCommandHandler:
             self.git_available = False
             self.exc = str(e)
 
-    def handle(self, shell: "RShellHTTP", args: dict) -> Iterable[dict]:
-        if self.nogit:
+    def handle(self, shell: Any, args: dict) -> Iterable[dict]:
+        if not self.git_available:
             yield {
-                "message": "git was not able to load due to exception on import",
+                "message": "GIT_CONFIG (clone): git was not able to load due to exception on import",
                 "type": "exception",
                 "code": 500,
-                "exception": self.exc,
             }
             return
         clone_repo(args)
@@ -178,7 +240,7 @@ class CheckInstalledCommandHandler:
         "    ip\n                    "
     )
 
-    def handle(self, shell: "RShellHTTP", args: dict) -> Iterable[dict]:
+    def handle(self, shell: Any, args: dict) -> Iterable[dict]:
         result: dict = {}
         try:
             content = execute_r(self._R_SCRIPT, eval=True, limit=-1)
@@ -196,7 +258,7 @@ class InitCommandHandler:
 
     command_type: ClassVar[str] = 'init'
 
-    def handle(self, shell: "RShellHTTP", args: dict) -> Iterable[dict]:
+    def handle(self, shell: Any, args: dict) -> Iterable[dict]:
         yield from shell.init_messages
 
 
@@ -220,10 +282,14 @@ COMMAND_HANDLERS: Dict[str, CommandHandler] = _build_handler_registry(
     RHelpCommandHandler,
     PyCommandHandler,
     MarkdownCommandHandler,
+    PasteCellsCommandHandler,
     OpenBlankDatasetCommandHandler,
     OpenCommandHandler,
     RefreshCommandHandler,
+    GetCellCommandHandler,
     UpdateModalCommandHandler,
+    GetAutocompleteStringsCommandHandler,
+    GetPackagesForAutocompleteCommandHandler,
     CloneCommandHandler,
     CheckInstalledCommandHandler,
     InitCommandHandler,
