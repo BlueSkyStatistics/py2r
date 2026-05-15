@@ -16,7 +16,7 @@ if sys.platform == 'win32':
     	(r"C:\\Windows\\SysWOW64\\ucrtbase.dll", ".")
     ]
 else:
-    sys.path.insert(0, Path().absolute())
+    sys.path.insert(0, str(Path().absolute()))
 
 def collect_package(package_name: str):
     global datas
@@ -28,13 +28,13 @@ def collect_package(package_name: str):
     binaries += b
     hidden_imports += h
 
+collect_package('urllib3')
 collect_package('py2r')
 collect_package('rpy2')
 collect_package('rpy2.robjects')
 collect_package('dulwich')
 collect_package('paramiko')
 collect_package('certifi')
-collect_package('urllib3')
 collect_package('cryptography')
 collect_package('six')
 collect_package('astunparse')
@@ -47,7 +47,7 @@ print(f'{hidden_imports=}')
 block_cipher = None
 
 pathex = site.getsitepackages()
-pathex.append(Path().absolute())
+pathex.append(str(Path().absolute()))
 a = Analysis(['console.py'],
              pathex=pathex,
              binaries=binaries,
