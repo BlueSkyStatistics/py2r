@@ -10,7 +10,13 @@ from traceback import format_exc
 import signal
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse
-from py2r.pylogger import logger
+from logging import getLogger, StreamHandler, Formatter
+# Set up logging
+logger = getLogger("RShellHTTP")
+logger.setLevel("INFO")
+handler = StreamHandler(sys.stdout)
+handler.setFormatter(Formatter("%(asctime)s - %(levelname)s - %(message)s"))
+logger.addHandler(handler)
 
 from command_handlers import COMMAND_HANDLERS
 from r_shell_base import RShellBase
