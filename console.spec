@@ -28,17 +28,17 @@ def collect_package(package_name: str):
     binaries += b
     hidden_imports += h
 
-#collect_package('py2r')
-#collect_package('rpy2')
-#collect_package('rpy2.robjects')
-#collect_package('dulwich')
-#collect_package('paramiko')
-#collect_package('certifi')
+collect_package('py2r')
+collect_package('rpy2')
+collect_package('rpy2.robjects')
+collect_package('dulwich')
+collect_package('paramiko')
+collect_package('certifi')
 collect_package('urllib3')
-#collect_package('cryptography')
-#collect_package('six')
-#collect_package('astunparse')
-#collect_package('logging')
+collect_package('cryptography')
+collect_package('six')
+collect_package('astunparse')
+collect_package('logging')
 
 print(f'{datas=}')
 print(f'{binaries=}')
