@@ -10,9 +10,9 @@ services:
       - ./tmp/:/tmp/
     ports:
       - "8000:8000"  # HTTP server port for Electron communication
-#    environment:
-#      - R_LIBS_USER=/usr/local/lib/R/site-library
+    environment:
+      - R_LIBS_USER=/usr/local/lib/R/site-library
       # Optional: if you need to set specific R environment variables
-#      - R_HOME=/usr/local/lib/R
-#      - R_HOME_DIR=/usr/local/lib/R
-#      - R_SHELL_HTTP_PORT=8000
+      - R_HOME=/usr/local/lib/R
+      - R_HOME_DIR=/usr/local/lib/R
+      - R_SHELL_HTTP_PORT=8000
