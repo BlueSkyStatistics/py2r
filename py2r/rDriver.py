@@ -226,12 +226,12 @@ close(fp)""")
             yield {"message": format_exc(), "type": "log"}
 
     def paste_datagrid(self, startRow: int, startCol: int, datasetName: str,
-                       fromrowidx: int = 1, torowidx: int = 20, digits: str = 'NA'):
+                       fromrowidx: int = 1, torowidx: int = 20, digits: str = 'NA', forceRefresh: bool = False):
         try:
             result = r(f"BSkyMultipleEditDataGrid(startRow={startRow}, startCol={startCol}, dataSetNameOrIndex='{datasetName}')")
             needs_refresh = bool(result[0])
-            logger.info(f"Value of needs_refresh: {needs_refresh}")
-            if needs_refresh:
+            logger.info(f"Value of needs_refresh: {needs_refresh}, forceRefresh: {forceRefresh}")
+            if needs_refresh or forceRefresh:
                 for msg in ds.refresh(datasetName=datasetName, reloadCols=True,
                                       fromrowidx=fromrowidx, torowidx=torowidx, digits=digits):
                     logger.info(f"paste_datagrid yielding msg keys: {list(msg.keys())}, refresh={msg.get('refresh')}")
