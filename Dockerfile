@@ -42,6 +42,10 @@ ENV LD_LIBRARY_PATH=/usr/local/lib/R/lib:$LD_LIBRARY_PATH
 # Create shared directories
 RUN mkdir -p /shared /usr/local/lib/R/site-library
 
+# Install BlueSky R package from GitHub
+RUN Rscript -e "install.packages('remotes', repos='https://cloud.r-project.org/')" && \
+    Rscript -e "remotes::install_github('BlueSkyStatistics/BlueSky')"
+
 # Set working directory for Python app
 WORKDIR /app
 
@@ -56,7 +60,8 @@ COPY pyproject.toml uv.lock ./
 # Set environment variables for Python/rpy2 (following your current setup)
 ENV UV_NO_CACHE=true
 ENV PYTHONPATH=/app
-ENV R_HOME_DIR=/usr/local/lib/R
+ENV R_HOME_DIR=$R_HOME
+ENV R_SHELL_HTTP_PORT=8000
 
 # Install Python dependencies with uv
 RUN uv sync --locked
@@ -66,7 +71,7 @@ COPY ./*.py ./
 COPY py2r ./py2r
 
 # Expose port for HTTP server (Electron will connect to this)
-EXPOSE 8000
+EXPOSE $R_SHELL_HTTP_PORT
 
 # Run the HTTP-based console (no Rserve needed, uses local rpy2)
 CMD ["uv", "run", "console_http.py", "8000"]

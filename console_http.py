@@ -4,188 +4,66 @@ HTTP-based console for Docker deployment
 Provides same functionality as console.py but via HTTP endpoints
 """
 
-import cmd
 import sys
 import json
 from traceback import format_exc
-from threading import Thread
 import signal
-import atexit
 from http.server import HTTPServer, BaseHTTPRequestHandler
-from urllib.parse import urlparse, parse_qs
-import logging
+from urllib.parse import urlparse
+from logging import getLogger, StreamHandler, Formatter
+# Set up logging
+logger = getLogger("RShellHTTP")
+logger.setLevel("INFO")
+handler = StreamHandler(sys.stdout)
+handler.setFormatter(Formatter("%(asctime)s - %(levelname)s - %(message)s"))
+logger.addHandler(handler)
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-# from py2r.pylogger import logger
-
-# Set encoding
-sys.stdin.reconfigure(encoding='utf-8') if hasattr(sys.stdin, 'reconfigure') else None
-sys.stdout.reconfigure(encoding='utf-8') if hasattr(sys.stdout, 'reconfigure') else None
-
-# Use local R via rpy2 (as original behavior inside the container)
-try:
-    logger.info('importing execute_r from rutils and init. R')
-    from py2r.rUtils import execute_r
-except Exception as e:
-    logger.critical("error while importing execute_r")
-    raise e
-
-from py2r.pyConsole import run_py
-from py2r.rDriver import RDriver
-
-try:
-    from py2r.git_market import clone_repo
-
-    nogit = False
-except:
-    nogit = True
+from command_handlers import COMMAND_HANDLERS
+from r_shell_base import RShellBase
 
 
-class RShellHTTP:
+class RShellHTTP(RShellBase):
     """HTTP-compatible version of RShell"""
 
     def __init__(self):
         logger.info("Initializing RShellHTTP...")
-        self.r = RDriver()
+        super().__init__()
 
-        # Initialize libs and get R version
-        self.init_messages = []
-        for message in self.r.initiate_libs():
-            self.init_messages.append(message)
-
-        self.init_messages.append({"message": "initialized", "type": "init_done"})
-
-        # Get R version
-        rversioncmd = "RMajorMinorver =list(major = R.version$major, minor = R.version$minor)"
-        execute_r(rversioncmd)
-        rc, _ = execute_r("jsonlite::toJSON(RMajorMinorver, na = NULL)")
-        r_version = json.loads(rc[0])
-        self.init_messages.append({"message": r_version, "type": "rversion"})
+        # Collect init messages for replay via /init endpoint
+        self.init_messages = list(self._init_libs())
+        self.init_messages.append(self._get_r_version())
 
         logger.info("RShellHTTP initialized successfully")
 
     def process_command(self, command_type, args_json):
-        """Process a command and return results"""
-        results = []
-        message_order = 0
-
-        print(f'Processing command: {command_type} with args: {args_json}')
+        """Process a command and return results by dispatching to a handler."""
+        logger.info(f'Processing command: {command_type} with args: {args_json}')
 
         try:
             args = json.loads(args_json) if args_json else {}
 
-            if command_type == 'r':
-                for message in self.r.run(**args):
-                    if message["type"] != 'log':
-                        message["count"] = message_order
-                        message_order += 1
-                    results.append(message)
-
-            elif command_type == 'rhelp':
-                for message in self.r.run(**args):
-                    results.append(message)
-
-            elif command_type == 'py':
-                for message in run_py(**args):
-                    if message["type"] != 'log':
-                        message["count"] = message_order
-                        message_order += 1
-                    results.append(message)
-
-            elif command_type == 'md':
-                results.append({
-                    "message": str(args['cmd']),
-                    "caption": "",
-                    "type": "markdown",
-                    "code": 200,
-                    "updateDataSet": False,
-                    "name": args.get('datasetName', None),
-                    "cmd": args['cmd'],
-                    "eval": True,
-                    "parent_id": args.get('parent_id', None),
-                    "output_id": args.get('output_id', None),
-                })
-
-            elif command_type == 'openblankds':
-                for message in self.r.openblankds(**args):
-                    results.append(message)
-
-            elif command_type == 'open':
-                for message in self.r.open(**args):
-                    results.append(message)
-
-            elif command_type == 'refresh':
-                for message in self.r.refresh(**args):
-                    results.append(message)
-
-            elif command_type == 'updatemodal':
-                content = execute_r(args["cmd"], eval=True)
-                if content[1] == 'NILSXP':
-                    content = ""
-                else:
-                    content = content[0]
-                results.append({
-                    "element_id": args["element_id"],
-                    "content": content,
-                    "type": "modalUpdate"
-                })
-
-            elif command_type == 'clone':
-                if nogit:
-                    results.append({
-                        "message": "git was not able to load due to exception on import",
-                        "type": "exception",
-                        "code": 500
-                    })
-                else:
-                    clone_repo(args)
-                    results.append({"content": "done", "type": "git_clone"})
-
-            elif command_type == 'check_installed':
-                result = {}
-                try:
-                    cmd = """ip = as.data.frame(installed.packages()[,c(1,3:4)])
-    ip = ip[is.na(ip$Priority),1:2,drop=FALSE]
-    ip
-                    """
-                    content = execute_r(cmd, eval=True, limit=-1)
-                    if content[1] != 'NILSXP':
-                        content = content[0]
-                        for record in content[1:]:
-                            result[record[0]] = record[1]
-                except:
-                    pass
-                results.append({"content": result, "type": "installedPackages"})
-
-            elif command_type == 'init':
-                # Return initialization messages
-                results.extend(self.init_messages)
-
-            else:
-                results.append({
+            handler = COMMAND_HANDLERS.get(command_type)
+            if handler is None:
+                return [{
                     "message": f"Unknown command type: {command_type}",
                     "type": "exception",
-                    "code": 400
-                })
+                    "code": 400,
+                }]
+
+            return list(handler.handle(self, args))
 
         except Exception as e:
-            results.append({
-                "message": f"Command execution error: {str(e)}\n{command_type=}\n{args_json=}\n\n{format_exc()}",
+            return [{
+                "message": (
+                    f"Command execution error: {str(e)}\n"
+                    f"{command_type=}\n{args_json=}\n\n{format_exc()}"
+                ),
                 "format_exc": format_exc(),
                 "command_type": command_type,
                 "args_json": args_json,
                 "type": "exception",
-                "code": 500
-            })
-            # results.append({
-            #     "message": f"Command execution error: {format_exc()}",
-            #     "type": "exception",
-            #     "code": 500
-            # })
-
-        return results
+                "code": 500,
+            }]
 
 
 # Global RShell instance
