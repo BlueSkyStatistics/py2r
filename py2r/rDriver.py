@@ -227,19 +227,56 @@ close(fp)""")
             yield {"message": format_exc(), "type": "log"}
 
     def paste_datagrid(self, startRow: int, startCol: int, datasetName: str,
-                       fromrowidx: int = 1, torowidx: int = 20, digits: str = 'NA'):
+                       fromrowidx: int = 1, torowidx: int = 20, digits: str = 'NA', forceRefresh: bool = False, rCmd: str = None,
+                       parent_id: str = None, output_id: str = None):
         try:
-            result = r(f"BSkyMultipleEditDataGrid(startRow={startRow}, startCol={startCol}, dataSetNameOrIndex='{datasetName}')")
-            needs_refresh = bool(result[0])
-            logger.info(f"Value of needs_refresh: {needs_refresh}")
-            if needs_refresh:
+            cmd = rCmd if rCmd else f"BSkyMultipleEditDataGrid(startRow={startRow}, startCol={startCol}, dataSetNameOrIndex='{datasetName}')"
+            # Open an output-only sink in append mode so cat()/print() output from
+            # BSkyMultipleEditDataGrid is captured. We skip sink(type="message") because
+            # redirecting rpy2's message stream causes a hang.
+            r(f"""fp_paste <- file("{self.sinkfile}", open = "at", encoding = "UTF-8")
+sink(fp_paste)""")
+            sink_offset = path.getsize(self.sinkfile) if path.exists(self.sinkfile) else 0
+            result = r(cmd)
+            r("""sink()
+flush(fp_paste)
+close(fp_paste)""")
+            if path.exists(self.sinkfile):
+                with open(self.sinkfile, encoding='utf-8') as f:
+                    f.seek(sink_offset)
+                    new_content = f.read()
+                for line in new_content.splitlines():
+                    if line.strip():
+                        logger.info(f"[paste_datagrid] yielding console line: {line.rstrip()}")
+                        yield {
+                            "message": line.rstrip(),
+                            "type": "console",
+                            "code": 200,
+                            "name": datasetName,
+                            "parent_id": parent_id,
+                            "output_id": output_id,
+                        }
+
+            edit_result = int(result[0])
+            logger.info(f"Value of edit_result: {edit_result}, forceRefresh: {forceRefresh}")
+            if edit_result == 1 or forceRefresh:
+                # Multi-cell edit, column class changed — full refresh with column reload
                 for msg in ds.refresh(datasetName=datasetName, reloadCols=True,
                                       fromrowidx=fromrowidx, torowidx=torowidx, digits=digits):
                     logger.info(f"paste_datagrid yielding msg keys: {list(msg.keys())}, refresh={msg.get('refresh')}")
                     yield msg
                 logger.info("paste_datagrid ds.refresh loop complete")
+            elif edit_result == 4:
+                # Single-cell edit rejected due to class change — refresh only the edited row so
+                # resp.message.fromidx == startRow, matching the pendingCellEditQueue key
+                for msg in ds.refresh(datasetName=datasetName, reloadCols=False,
+                                      fromrowidx=startRow, torowidx=startRow, digits=digits):
+                    logger.info(f"paste_datagrid yielding msg keys: {list(msg.keys())}, refresh={msg.get('refresh')}")
+                    yield msg
+                logger.info("paste_datagrid ds.refresh loop complete")
             else:
-                yield {"type": "pasteComplete", "needsGridRefresh": False, "name": datasetName}
+                # edit_result == 0 (multi-cell, no class change) or 3 (single-cell success) — optimistic update suffices
+                yield {"type": "pasteComplete", "needsGridRefresh": False, "name": datasetName, "startRow": startRow, "startCol": startCol}
         except:
             logger.info(f"paste_datagrid exception: {format_exc()}")
             yield {"message": f"paste_datagrid error: {format_exc()}", "type": "exception", "code": 500}
