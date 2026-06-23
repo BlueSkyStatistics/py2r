@@ -101,6 +101,56 @@ def getcell(datasetName: str, row: int, col: int, digits: str = 'NA'):
     }
 
 
+def search(datasetName: str, term: str, maxMatches: int = 10000):
+    # Find & navigate (Ctrl+F): locate every cell whose displayed text *contains*
+    # `term`, case-insensitively. Returns 1-based (row, col) coordinates, row-major
+    # sorted. 
+    if term is None or term == "":
+        yield {"type": "searchResult", "name": datasetName, "term": term,
+               "matches": [], "total": 0, "truncated": False}
+        return
+
+    # Escape only what an R double-quoted string literal needs.
+    safe_term = term.replace("\\", "\\\\").replace('"', '\\"')
+
+    r_expr = (
+        "jsonlite::toJSON(local({"
+        " df <- .GlobalEnv$__DS__;"
+        ' term <- tolower("__TERM__");'
+        " hits <- list();"
+        " for (j in seq_along(df)) {"
+        "   m <- which(grepl(term, tolower(as.character(df[[j]])), fixed = TRUE));"
+        "   if (length(m)) hits[[length(hits) + 1L]] <- cbind(m, j)"
+        " };"
+        " res <- if (length(hits)) do.call(rbind, hits) else matrix(integer(0), ncol = 2L);"
+        " res <- res[order(res[, 1L], res[, 2L]), , drop = FALSE];"
+        " n <- nrow(res);"
+        " capped <- if (n > __MAX__) res[seq_len(__MAX__), , drop = FALSE] else res;"
+        " list(total = n, matches = capped)"
+        "}))"
+    )
+    r_expr = (r_expr
+              .replace("__DS__", datasetName)
+              .replace("__TERM__", safe_term)
+              .replace("__MAX__", str(int(maxMatches))))
+
+    result, _ = execute_r(r_expr)
+    obj = loads(result[0]) if result and result[0] else {}
+    total = obj.get("total", [0])
+    total = total[0] if isinstance(total, list) else total
+    pairs = obj.get("matches", []) or []
+    matches = [{"row": int(p[0]), "col": int(p[1])} for p in pairs]
+
+    yield {
+        "type": "searchResult",
+        "name": datasetName,
+        "term": term,
+        "matches": matches,
+        "total": total,
+        "truncated": total > len(matches),
+    }
+
+
 def getrowcountcolprops(datasetName,reloadCols=True,file_path ="" ):
     rc, _ = execute_r(f'jsonlite::toJSON(nrow(.GlobalEnv${datasetName}))')
     rc = loads(rc[0])

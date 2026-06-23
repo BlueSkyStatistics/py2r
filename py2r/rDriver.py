@@ -251,6 +251,13 @@ close(fp)""")
         except:
             yield {"message": format_exc(), "type": "log"}
 
+    def search(self, datasetName: str, term: str, maxMatches: int = 10000):
+        try:
+            for message in ds.search(datasetName=datasetName, term=term, maxMatches=maxMatches):
+                yield message
+        except:
+            yield {"message": format_exc(), "type": "log"}
+
 
     @staticmethod
     def close_devices():

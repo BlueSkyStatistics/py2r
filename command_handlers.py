@@ -140,6 +140,15 @@ class GetCellCommandHandler:
         yield from shell.r.getcell(**args)
 
 
+class SearchCommandHandler:
+    """Find all cells matching a search term in the dataset (Ctrl+F)."""
+
+    command_type: ClassVar[str] = 'search'
+
+    def handle(self, shell: 'RShellBase', args: dict) -> Iterable[dict]:
+        yield from shell.r.search(**args)
+
+
 class UpdateModalCommandHandler:
     """Evaluate R code and emit a ``modalUpdate`` message for the client."""
 
@@ -277,6 +286,7 @@ COMMAND_HANDLERS: Dict[str, CommandHandler] = _build_handler_registry(
     OpenCommandHandler,
     RefreshCommandHandler,
     GetCellCommandHandler,
+    SearchCommandHandler,
     UpdateModalCommandHandler,
     GetAutocompleteStringsCommandHandler,
     GetPackagesForAutocompleteCommandHandler,
