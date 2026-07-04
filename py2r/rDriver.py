@@ -27,6 +27,11 @@ from py2r.blueskyparser import blueSkyParser
 from py2r.rUtils import execute_r, randomString, str2bool
 import py2r.rDataset as ds
 
+if 'win' in platform:
+    from py2r.win_clipboard import read_clipboard_text
+else:
+    read_clipboard_text = None
+
 try:
     r = robjects.r
 except Exception as e:
@@ -230,7 +235,12 @@ close(fp)""")
                        fromrowidx: int = 1, torowidx: int = 20, digits: str = 'NA', forceRefresh: bool = False, rCmd: str = None,
                        parent_id: str = None, output_id: str = None):
         try:
-            cmd = rCmd if rCmd else f"BSkyMultipleEditDataGrid(startRow={startRow}, startCol={startCol}, dataSetNameOrIndex='{datasetName}')"
+            if rCmd:
+                cmd = rCmd
+            else:
+                clip_text = read_clipboard_text() if read_clipboard_text else None
+                robjects.globalenv['.bsky_clipboard_text'] = clip_text
+                cmd = f"BSkyMultipleEditDataGrid(startRow={startRow}, startCol={startCol}, dataSetNameOrIndex='{datasetName}', clipboardText=.bsky_clipboard_text)"
             # Open an output-only sink in append mode so cat()/print() output from
             # BSkyMultipleEditDataGrid is captured. We skip sink(type="message") because
             # redirecting rpy2's message stream causes a hang.
