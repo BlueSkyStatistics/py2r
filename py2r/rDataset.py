@@ -101,6 +101,41 @@ def getcell(datasetName: str, row: int, col: int, digits: str = 'NA'):
     }
 
 
+def search(datasetName: str, term: str, maxMatches: int = 10000):
+    # Find & navigate (Ctrl+F): locate every cell whose displayed text *contains*
+    # `term`, case-insensitively. Returns 1-based (row, col) coordinates, row-major
+    # sorted. 
+    if term is None or term == "":
+        yield {"type": "searchResult", "name": datasetName, "term": term,
+               "matches": [], "total": 0, "truncated": False}
+        return
+
+    # Escape only what an R double-quoted string literal needs.
+    safe_term = term.replace("\\", "\\\\").replace('"', '\\"')
+
+    # Delegates to the BSkySearchDataset() R function (see BSkySearchDataset.R).
+    r_expr = (
+        f'BSkySearchDataset('
+        f'"{datasetName}", "{safe_term}", {int(maxMatches)})'
+    )
+
+    result, _ = execute_r(r_expr)
+    obj = loads(result[0]) if result and result[0] else {}
+    total = obj.get("total", [0])
+    total = total[0] if isinstance(total, list) else total
+    pairs = obj.get("matches", []) or []
+    matches = [{"row": int(p[0]), "col": int(p[1])} for p in pairs]
+
+    yield {
+        "type": "searchResult",
+        "name": datasetName,
+        "term": term,
+        "matches": matches,
+        "total": total,
+        "truncated": total > len(matches),
+    }
+
+
 def getrowcountcolprops(datasetName,reloadCols=True,file_path ="" ):
     rc, _ = execute_r(f'jsonlite::toJSON(nrow(.GlobalEnv${datasetName}))')
     rc = loads(rc[0])
