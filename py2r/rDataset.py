@@ -113,26 +113,11 @@ def search(datasetName: str, term: str, maxMatches: int = 10000):
     # Escape only what an R double-quoted string literal needs.
     safe_term = term.replace("\\", "\\\\").replace('"', '\\"')
 
+    # Delegates to the BSkySearchDataset() R function (see BSkySearchDataset.R).
     r_expr = (
-        "jsonlite::toJSON(local({"
-        " df <- .GlobalEnv$__DS__;"
-        ' term <- tolower("__TERM__");'
-        " hits <- list();"
-        " for (j in seq_along(df)) {"
-        "   m <- which(grepl(term, tolower(as.character(df[[j]])), fixed = TRUE));"
-        "   if (length(m)) hits[[length(hits) + 1L]] <- cbind(m, j)"
-        " };"
-        " res <- if (length(hits)) do.call(rbind, hits) else matrix(integer(0), ncol = 2L);"
-        " res <- res[order(res[, 1L], res[, 2L]), , drop = FALSE];"
-        " n <- nrow(res);"
-        " capped <- if (n > __MAX__) res[seq_len(__MAX__), , drop = FALSE] else res;"
-        " list(total = n, matches = capped)"
-        "}))"
+        f'BSkySearchDataset('
+        f'"{datasetName}", "{safe_term}", {int(maxMatches)})'
     )
-    r_expr = (r_expr
-              .replace("__DS__", datasetName)
-              .replace("__TERM__", safe_term)
-              .replace("__MAX__", str(int(maxMatches))))
 
     result, _ = execute_r(r_expr)
     obj = loads(result[0]) if result and result[0] else {}
