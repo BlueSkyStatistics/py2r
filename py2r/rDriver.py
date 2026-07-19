@@ -305,6 +305,27 @@ close(fp_paste)""")
         except:
             yield {"message": format_exc(), "type": "log"}
 
+    def replace_all(self, **kwargs):
+        try:
+            for message in ds.replace_all(**kwargs):
+                yield message
+        except:
+            yield {"message": format_exc(), "type": "log"}
+
+    def replace_undo(self, **kwargs):
+        try:
+            for message in ds.replace_undo(**kwargs):
+                yield message
+        except:
+            yield {"message": format_exc(), "type": "log"}
+
+    def replace_redo(self, **kwargs):
+        try:
+            for message in ds.replace_redo(**kwargs):
+                yield message
+        except:
+            yield {"message": format_exc(), "type": "log"}
+
 
     @staticmethod
     def close_devices():
