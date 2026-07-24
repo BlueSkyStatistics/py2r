@@ -3,9 +3,9 @@ from sys import exit
 from json import loads, dumps
 from traceback import format_exc
 from py2r.pylogger import logger
-from command_handlers import COMMAND_HANDLERS
+from command_handlers import dispatch_command
 from r_shell_base import RShellBase
-
+from trial import check_trial, TrialExpiredError
 
 class RShell(RShellBase, Cmd):
     prompt = ''
@@ -19,6 +19,10 @@ class RShell(RShellBase, Cmd):
 
     def emptyline(self):
         try:
+            check_trial()
+        except TrialExpiredError:
+            raise Exception("Trial period expired.")
+        try:
             cmd = loads(self._cmd)
             self._cmd = ''
             for message in self.r.run(**cmd):
@@ -27,19 +31,17 @@ class RShell(RShellBase, Cmd):
             logger.error(f"JSON encoding failed for {self._cmd}")
 
     def default(self, line):
-        """Dispatch all commands through the shared COMMAND_HANDLERS registry."""
+        """Dispatch all commands through the shared dispatch_command chokepoint."""
         cmd, args, _ = self.parseline(line)
-        handler = COMMAND_HANDLERS.get(cmd)
-        if handler is None:
-            print(dumps({"message": f"Unknown command: {cmd}", "type": "exception", "code": 400}))
-            return
         try:
             parsed_args = loads(args) if args else {}
-            for message in handler.handle(self, parsed_args):
+            for message in dispatch_command(self, cmd, parsed_args):
                 try:
                     print(dumps(message))
                 except TypeError:
                     print(dumps({"message": str(message), "type": "exception"}))
+        except TrialExpiredError:
+            raise Exception("Trial period expired.")
         except Exception:
             print(dumps({
                 "message": f"EXCEPTION ({cmd}): {format_exc()}",
@@ -53,4 +55,8 @@ class RShell(RShellBase, Cmd):
 
 
 if __name__ == '__main__':
+    try:
+        check_trial()
+    except TrialExpiredError:
+        raise Exception("Trial period expired.")
     RShell().cmdloop()
