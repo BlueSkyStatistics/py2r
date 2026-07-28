@@ -10,7 +10,7 @@ try:
 except:
     from rpy2.rinterface import NA_Integer as NAIntegerType
 
-from py2r.config import rtypes, max_columns
+from .config import rtypes, max_columns
 
 def convert_listvector(r_response, limit=100):
     rett_type = "table"

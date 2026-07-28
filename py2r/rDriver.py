@@ -27,6 +27,11 @@ from py2r.blueskyparser import blueSkyParser
 from py2r.rUtils import execute_r, randomString, str2bool
 import py2r.rDataset as ds
 
+if 'win' in platform:
+    from py2r.win_clipboard import read_clipboard_text
+else:
+    read_clipboard_text = None
+
 try:
     r = robjects.r
 except Exception as e:
@@ -132,8 +137,9 @@ close(fp)""")
         else:
             encoding = f'"{encoding}"'
         if filetype in ('XLS', 'XLSX') and wsName == 'NULL':
-            worksheets, _ = execute_r(f'GetTableList(excelfilename="{file_path}", xlsx={str("XLSX" in filetype).upper()})')
-        if len(worksheets) >= 1: # prompt wsName
+            #worksheets, _ = execute_r(f'GetTableList(excelfilename="{file_path}", xlsx={str("XLSX" in filetype).upper()})')
+            worksheets, _ = execute_r(f"readxl::excel_sheets('{file_path}')")
+        if worksheets is not None and len(worksheets) >= 1: # prompt wsName
             yield {
                 "message": worksheets,
                 "type": 'worksheets',
@@ -154,7 +160,7 @@ close(fp)""")
                 }
             }
         output_buffer = ""    
-        if len(worksheets) == 0 or wsName != 'NULL':
+        if worksheets is not None and len(worksheets) == 0 or wsName != 'NULL':
             # open sink
             r(f"""fp <- file("{self.sinkfile}", open = "wt", encoding = "UTF-8")
 options("warn" = 1)
@@ -216,27 +222,86 @@ close(fp)""")
                     "parent_id": cgid
                 }
 
-    def refresh(self, datasetName, reloadCols=True, fromrowidx=1, torowidx=20):
+    def refresh(self, datasetName: str, reloadCols: bool = True, fromrowidx: int = 1, torowidx: int = 20,
+                digits: int = 'NA', signalReloadColsUI: bool = False):
         try:
-            for message in ds.refresh(datasetName, reloadCols, fromrowidx, torowidx):
+            # This same 'refresh' endpoint backs BOTH the manual "Refresh dataset"
+            # toolbar click AND routine scroll-triggered viewport fetches
+            # (refreshGridDataset in the JS is shared by both). Only the toolbar click
+            # sends signalReloadColsUI=True; scroll fetches default it to False so they
+            # don't force reloaddataset() (full grid rebuild) on every scroll tick.
+            for message in ds.refresh(datasetName=datasetName, reloadCols=reloadCols,
+                                      signalReloadColsUI=signalReloadColsUI,
+                                      fromrowidx=fromrowidx, torowidx=torowidx, digits=digits):
                 yield message
         except:
             yield {"message": format_exc(), "type": "log"}
 
     def paste_datagrid(self, startRow: int, startCol: int, datasetName: str,
-                       fromrowidx: int = 1, torowidx: int = 20, digits: str = 'NA'):
+                       fromrowidx: int = 1, torowidx: int = 20, digits: str = 'NA', forceRefresh: bool = False, rCmd: str = None,
+                       parent_id: str = None, output_id: str = None):
         try:
-            result = r(f"BSkyMultipleEditDataGrid(startRow={startRow}, startCol={startCol}, dataSetNameOrIndex='{datasetName}')")
-            needs_refresh = bool(result[0])
-            logger.info(f"Value of needs_refresh: {needs_refresh}")
-            if needs_refresh:
-                for msg in ds.refresh(datasetName=datasetName, reloadCols=True,
+            if rCmd:
+                cmd = rCmd
+            else:
+                clip_text = read_clipboard_text() if read_clipboard_text else None
+                robjects.globalenv['.bsky_clipboard_text'] = clip_text
+                cmd = f"BSkyMultipleEditDataGrid(startRow={startRow}, startCol={startCol}, dataSetNameOrIndex='{datasetName}', clipboardText=.bsky_clipboard_text)"
+            # Open an output-only sink in append mode so cat()/print() output from
+            # BSkyMultipleEditDataGrid is captured. We skip sink(type="message") because
+            # redirecting rpy2's message stream causes a hang.
+            r(f"""fp_paste <- file("{self.sinkfile}", open = "at", encoding = "UTF-8")
+sink(fp_paste)""")
+            sink_offset = path.getsize(self.sinkfile) if path.exists(self.sinkfile) else 0
+            result = r(cmd)
+            r("""sink()
+flush(fp_paste)
+close(fp_paste)""")
+            if path.exists(self.sinkfile):
+                with open(self.sinkfile, encoding='utf-8') as f:
+                    f.seek(sink_offset)
+                    new_content = f.read()
+                for line in new_content.splitlines():
+                    if line.strip():
+                        logger.info(f"[paste_datagrid] yielding console line: {line.rstrip()}")
+                        yield {
+                            "message": line.rstrip(),
+                            "type": "console",
+                            "code": 200,
+                            "name": datasetName,
+                            "parent_id": parent_id,
+                            "output_id": output_id,
+                        }
+
+            edit_result = int(result[0])
+            logger.info(f"Value of edit_result: {edit_result}, forceRefresh: {forceRefresh}")
+            if edit_result == 1 or forceRefresh:
+                # Multi-cell edit, column class changed and/or new factor levels added —
+                # full refresh with column reload. signalReloadColsUI=True is required
+                # (not just reloadCols=True): reloadCols only controls whether Python
+                # fetches fresh column metadata from R, while signalReloadColsUI is what
+                # stamps resp.message.reloadCols=True so the frontend's newDataFrame
+                # handler actually rebuilds the datagrid columns AND the variable grid.
+                # Without it, a class-agnostic change (e.g. a factor gaining new levels)
+                # is invisible to the frontend's own colTypeMismatch heuristic, which
+                # normalizes factor/character/ordered to the same bucket, so
+                # reloaddataset() (and therefore fillVarGrid) never runs.
+                for msg in ds.refresh(datasetName=datasetName, reloadCols=True, signalReloadColsUI=True,
                                       fromrowidx=fromrowidx, torowidx=torowidx, digits=digits):
                     logger.info(f"paste_datagrid yielding msg keys: {list(msg.keys())}, refresh={msg.get('refresh')}")
                     yield msg
                 logger.info("paste_datagrid ds.refresh loop complete")
+            elif edit_result == 4:
+                # Single-cell edit rejected due to class change — refresh only the edited row so
+                # resp.message.fromidx == startRow, matching the pendingCellEditQueue key
+                for msg in ds.refresh(datasetName=datasetName, reloadCols=False,
+                                      fromrowidx=startRow, torowidx=startRow, digits=digits):
+                    logger.info(f"paste_datagrid yielding msg keys: {list(msg.keys())}, refresh={msg.get('refresh')}")
+                    yield msg
+                logger.info("paste_datagrid ds.refresh loop complete")
             else:
-                yield {"type": "pasteComplete", "needsGridRefresh": False, "name": datasetName}
+                # edit_result == 0 (multi-cell, no class change) or 3 (single-cell success) — optimistic update suffices
+                yield {"type": "pasteComplete", "needsGridRefresh": False, "name": datasetName, "startRow": startRow, "startCol": startCol}
         except:
             logger.info(f"paste_datagrid exception: {format_exc()}")
             yield {"message": f"paste_datagrid error: {format_exc()}", "type": "exception", "code": 500}
@@ -244,6 +309,34 @@ close(fp)""")
     def getcell(self, datasetName: str, row: int, col: int, digits: str = 'NA'):
         try:
             for message in ds.getcell(datasetName=datasetName, row=row, col=col, digits=digits):
+                yield message
+        except:
+            yield {"message": format_exc(), "type": "log"}
+
+    def search(self, datasetName: str, term: str, maxMatches: int = 10000):
+        try:
+            for message in ds.search(datasetName=datasetName, term=term, maxMatches=maxMatches):
+                yield message
+        except:
+            yield {"message": format_exc(), "type": "log"}
+
+    def replace_all(self, **kwargs):
+        try:
+            for message in ds.replace_all(**kwargs):
+                yield message
+        except:
+            yield {"message": format_exc(), "type": "log"}
+
+    def replace_undo(self, **kwargs):
+        try:
+            for message in ds.replace_undo(**kwargs):
+                yield message
+        except:
+            yield {"message": format_exc(), "type": "log"}
+
+    def replace_redo(self, **kwargs):
+        try:
+            for message in ds.replace_redo(**kwargs):
                 yield message
         except:
             yield {"message": format_exc(), "type": "log"}
