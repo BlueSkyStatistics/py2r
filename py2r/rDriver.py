@@ -223,10 +223,16 @@ close(fp)""")
                 }
 
     def refresh(self, datasetName: str, reloadCols: bool = True, fromrowidx: int = 1, torowidx: int = 20,
-                digits: int = 'NA'):
+                digits: int = 'NA', signalReloadColsUI: bool = False):
         try:
-            for message in ds.refresh(datasetName=datasetName, reloadCols=reloadCols, fromrowidx=fromrowidx,
-                                      torowidx=torowidx, digits=digits):
+            # This same 'refresh' endpoint backs BOTH the manual "Refresh dataset"
+            # toolbar click AND routine scroll-triggered viewport fetches
+            # (refreshGridDataset in the JS is shared by both). Only the toolbar click
+            # sends signalReloadColsUI=True; scroll fetches default it to False so they
+            # don't force reloaddataset() (full grid rebuild) on every scroll tick.
+            for message in ds.refresh(datasetName=datasetName, reloadCols=reloadCols,
+                                      signalReloadColsUI=signalReloadColsUI,
+                                      fromrowidx=fromrowidx, torowidx=torowidx, digits=digits):
                 yield message
         except:
             yield {"message": format_exc(), "type": "log"}
@@ -270,8 +276,17 @@ close(fp_paste)""")
             edit_result = int(result[0])
             logger.info(f"Value of edit_result: {edit_result}, forceRefresh: {forceRefresh}")
             if edit_result == 1 or forceRefresh:
-                # Multi-cell edit, column class changed — full refresh with column reload
-                for msg in ds.refresh(datasetName=datasetName, reloadCols=True,
+                # Multi-cell edit, column class changed and/or new factor levels added —
+                # full refresh with column reload. signalReloadColsUI=True is required
+                # (not just reloadCols=True): reloadCols only controls whether Python
+                # fetches fresh column metadata from R, while signalReloadColsUI is what
+                # stamps resp.message.reloadCols=True so the frontend's newDataFrame
+                # handler actually rebuilds the datagrid columns AND the variable grid.
+                # Without it, a class-agnostic change (e.g. a factor gaining new levels)
+                # is invisible to the frontend's own colTypeMismatch heuristic, which
+                # normalizes factor/character/ordered to the same bucket, so
+                # reloaddataset() (and therefore fillVarGrid) never runs.
+                for msg in ds.refresh(datasetName=datasetName, reloadCols=True, signalReloadColsUI=True,
                                       fromrowidx=fromrowidx, torowidx=torowidx, digits=digits):
                     logger.info(f"paste_datagrid yielding msg keys: {list(msg.keys())}, refresh={msg.get('refresh')}")
                     yield msg
