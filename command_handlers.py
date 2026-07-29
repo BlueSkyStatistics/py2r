@@ -148,6 +148,33 @@ class SearchCommandHandler:
         yield from shell.r.search(**args)
 
 
+class ReplaceAllCommandHandler:
+    """Replace All from the Find & Replace bar: one R transaction, undoable via token."""
+
+    command_type: ClassVar[str] = 'replaceall'
+
+    def handle(self, shell: 'RShellBase', args: dict) -> Iterable[dict]:
+        yield from shell.r.replace_all(**args)
+
+
+class ReplaceUndoCommandHandler:
+    """Undo a Replace All by restoring the token's pre-image in R."""
+
+    command_type: ClassVar[str] = 'replaceundo'
+
+    def handle(self, shell: 'RShellBase', args: dict) -> Iterable[dict]:
+        yield from shell.r.replace_undo(**args)
+
+
+class ReplaceRedoCommandHandler:
+    """Redo a Replace All by restoring the token's post-image in R."""
+
+    command_type: ClassVar[str] = 'replaceredo'
+
+    def handle(self, shell: 'RShellBase', args: dict) -> Iterable[dict]:
+        yield from shell.r.replace_redo(**args)
+
+
 class UpdateModalCommandHandler:
     """Evaluate R code and emit a ``modalUpdate`` message for the client."""
 
@@ -286,6 +313,9 @@ COMMAND_HANDLERS: Dict[str, CommandHandler] = _build_handler_registry(
     RefreshCommandHandler,
     GetCellCommandHandler,
     SearchCommandHandler,
+    ReplaceAllCommandHandler,
+    ReplaceUndoCommandHandler,
+    ReplaceRedoCommandHandler,
     UpdateModalCommandHandler,
     GetAutocompleteStringsCommandHandler,
     GetPackagesForAutocompleteCommandHandler,
