@@ -18,8 +18,9 @@ handler = StreamHandler(sys.stdout)
 handler.setFormatter(Formatter("%(asctime)s - %(levelname)s - %(message)s"))
 logger.addHandler(handler)
 
-from command_handlers import COMMAND_HANDLERS
+from command_handlers import dispatch_command
 from r_shell_base import RShellBase
+from trial import check_trial, TrialExpiredError
 
 
 class RShellHTTP(RShellBase):
@@ -39,19 +40,14 @@ class RShellHTTP(RShellBase):
         """Process a command and return results by dispatching to a handler."""
         logger.info(f'Processing command: {command_type} with args: {args_json}')
 
+        # check_trial() runs first thing inside dispatch_command, and
+        # TrialExpiredError is deliberately NOT caught here -- it propagates
+        # up to do_POST, which shuts the server down.
         try:
             args = json.loads(args_json) if args_json else {}
-
-            handler = COMMAND_HANDLERS.get(command_type)
-            if handler is None:
-                return [{
-                    "message": f"Unknown command type: {command_type}",
-                    "type": "exception",
-                    "code": 400,
-                }]
-
-            return list(handler.handle(self, args))
-
+            return list(dispatch_command(self, command_type, args))
+        except TrialExpiredError:
+            raise
         except Exception as e:
             return [{
                 "message": (
@@ -102,6 +98,25 @@ class RequestHandler(BaseHTTPRequestHandler):
 
             else:
                 self.send_error(404)
+
+        except TrialExpiredError:
+            logger.critical("Trial period expired -- shutting down server")
+            try:
+                self.send_response(403)
+                self.send_header('Content-Type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps({
+                    "message": "Trial period expired.",
+                    "type": "exception",
+                    "code": 403,
+                }).encode('utf-8') + b'\n')
+            finally:
+                # Terminate the whole process so a left-running server
+                # actually stops serving once the trial has expired,
+                # rather than just erroring on every request forever.
+                import os
+                os._exit(1)
 
         except Exception as e:
             logger.error(f"Request handling error: {e}")

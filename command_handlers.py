@@ -18,7 +18,7 @@ from py2r.pyConsole import run_py
 from py2r.pylogger import logger
 from py2r.rUtils import execute_r, execute_r_complete_list
 from r_shell_base import RShellBase
-
+from trial import check_trial, TrialExpiredError
 
 class CommandHandler(Protocol):
     """Protocol for a single ``command_type`` handler.
@@ -49,7 +49,6 @@ class _OrderedMessageMixin:
 
 class RCommandHandler(_OrderedMessageMixin):
     """Execute R code through the shared :class:`RDriver`."""
-
     command_type: ClassVar[str] = 'r'
 
     def handle(self, shell: 'RShellBase', args: dict) -> Iterable[dict]:
@@ -323,3 +322,27 @@ COMMAND_HANDLERS: Dict[str, CommandHandler] = _build_handler_registry(
     CloneCommandHandler,
     CheckInstalledCommandHandler,
 )
+
+
+def dispatch_command(shell: 'RShellBase', command_type: str, args: dict) -> Iterable[dict]:
+    """Single chokepoint for running any command.
+
+    ALL callers (console_shell.py's default()/emptyline(), console_http.py's
+    process_command(), or anything else added later) should call this
+    function instead of touching COMMAND_HANDLERS directly. check_trial()
+    is called here, first, before any handler runs -- so every command
+    execution path is covered by construction, regardless of how it was
+    dispatched.
+    """
+    check_trial()  # raises TrialExpiredError if the trial has expired
+
+    handler = COMMAND_HANDLERS.get(command_type)
+    if handler is None:
+        yield {
+            "message": f"Unknown command type: {command_type}",
+            "type": "exception",
+            "code": 400,
+        }
+        return
+
+    yield from handler.handle(shell, args)
