@@ -10,8 +10,11 @@ on the very next command, not just at launch.
 """
 from time import time
 
-# Thursday, December 31, 2026 at 11:59:59 PM
-TRIAL_EXPIRY_TS = 1798761599
+# is it a trial build
+IS_TRIAL_BUILD = False
+
+# Wednesday, September 30, 2026 at 11:59:59 PM
+TRIAL_EXPIRY_TS = 1790812799
 
 
 class TrialExpiredError(Exception):
@@ -21,6 +24,5 @@ class TrialExpiredError(Exception):
 
 def check_trial() -> None:
     """Raise TrialExpiredError if the trial period has expired."""
-    if time() > TRIAL_EXPIRY_TS:
+    if IS_TRIAL_BUILD and time() > TRIAL_EXPIRY_TS:
         raise TrialExpiredError("Trial period expired.")
-g
