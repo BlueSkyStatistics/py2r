@@ -313,9 +313,9 @@ close(fp_paste)""")
         except:
             yield {"message": format_exc(), "type": "log"}
 
-    def search(self, datasetName: str, term: str, maxMatches: int = 10000):
+    def search(self, datasetName: str, term: str, maxMatches: int = 10000, mode: str = 'partial', matchCase: bool = False):
         try:
-            for message in ds.search(datasetName=datasetName, term=term, maxMatches=maxMatches):
+            for message in ds.search(datasetName=datasetName, term=term, maxMatches=maxMatches, mode=mode, matchCase=matchCase):
                 yield message
         except:
             yield {"message": format_exc(), "type": "log"}

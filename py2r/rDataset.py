@@ -117,10 +117,11 @@ def getcell(datasetName: str, row: int, col: int, digits: str = 'NA'):
     }
 
 
-def search(datasetName: str, term: str, maxMatches: int = 10000):
-    # Find & navigate (Ctrl+F): locate every cell whose displayed text *contains*
-    # `term`, case-insensitively. Returns 1-based (row, col) coordinates, row-major
-    # sorted. 
+def search(datasetName: str, term: str, maxMatches: int = 10000, mode: str = 'partial', matchCase: bool = False):
+    # Find & navigate (Ctrl+F): locate every cell whose displayed text matches `term`.
+    # mode="partial" (default) matches text anywhere in the cell; mode="whole" requires
+    # the entire cell to match. matchCase controls case sensitivity for either mode.
+    # Returns 1-based (row, col) coordinates, row-major sorted.
     if term is None or term == "":
         yield {"type": "searchResult", "name": datasetName, "term": term,
                "matches": [], "total": 0, "truncated": False}
@@ -128,11 +129,14 @@ def search(datasetName: str, term: str, maxMatches: int = 10000):
 
     # Escape only what an R double-quoted string literal needs.
     safe_term = term.replace("\\", "\\\\").replace('"', '\\"')
+    safe_mode = (mode or 'partial').replace("\\", "\\\\").replace('"', '\\"')
+    ignore_case_arg = 'FALSE' if matchCase else 'TRUE'
 
     # Delegates to the BSkySearchDataset() R function (see BSkySearchDataset.R).
     r_expr = (
         f'BSkySearchDataset('
-        f'"{datasetName}", "{safe_term}", {int(maxMatches)})'
+        f'"{datasetName}", "{safe_term}", {int(maxMatches)}, '
+        f'mode = "{safe_mode}", ignoreCase = {ignore_case_arg})'
     )
 
     result, _ = execute_r(r_expr)
@@ -207,17 +211,25 @@ def _replace_clear(datasetName):
 
 
 def replace_all(datasetName, replacement, rows, cols, fromrowidx=1, torowidx=20,
-                requestId=None, digits='NA'):
+                requestId=None, digits='NA', term=None, mode='whole', matchCase=False):
     # Apply `replacement` at every (rows[k], cols[k]) match in one R transaction,
     # emit the undo `token`, then repaint just the current viewport so off-screen
     # rows never touch the grid.
+    # mode="partial" substitutes only the matched `term` within each cell's existing
+    # value (see .bskyReplaceApplyAll); mode="whole" (default) overwrites the cell.
+    # matchCase controls case sensitivity of that substring substitution.
     token = 'rpl_' + uuid4().hex
     robjects.globalenv['.bsky_rpl_rows'] = IntVector([int(x) for x in rows])
     robjects.globalenv['.bsky_rpl_cols'] = IntVector([int(x) for x in cols])
+    term_arg = f'"{_r_str_escape(term)}"' if term else 'NULL'
+    mode_arg = f'"{_r_str_escape(mode or "whole")}"'
+    ignore_case_arg = 'FALSE' if matchCase else 'TRUE'
     expr = (
         f'jsonlite::toJSON(.bskyReplaceApplyAll('
         f'"{_r_str_escape(datasetName)}", .bsky_rpl_rows, .bsky_rpl_cols, '
-        f'"{_r_str_escape(replacement)}", "{token}"), auto_unbox = TRUE)'
+        f'"{_r_str_escape(replacement)}", "{token}", term = {term_arg}, mode = {mode_arg}, '
+        f'ignoreCase = {ignore_case_arg}), '
+        f'auto_unbox = TRUE)'
     )
     result, _ = execute_r(expr)
     robjects.r('if (exists(".bsky_rpl_rows")) rm(.bsky_rpl_rows); '
