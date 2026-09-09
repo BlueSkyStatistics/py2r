@@ -11,10 +11,10 @@ on the very next command, not just at launch.
 from time import time
 
 # is it a trial build
-IS_TRIAL_BUILD = False
+IS_TRIAL_BUILD = True
 
-# Wednesday, September 30, 2026 at 11:59:59 PM
-TRIAL_EXPIRY_TS = 1790812799
+# Thursday, December 31, 2026 at 11:59:59 PM
+TRIAL_EXPIRY_TS = 1798761599
 
 
 class TrialExpiredError(Exception):
