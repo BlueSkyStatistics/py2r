@@ -13,8 +13,8 @@ from time import time
 # is it a trial build
 IS_TRIAL_BUILD = True
 
-# Thursday, December 31, 2026 at 11:59:59 PM
-TRIAL_EXPIRY_TS = 1798761599
+# Friday, October 8, 2027 at 11:59:59 PM
+TRIAL_EXPIRY_TS = 1823039999
 
 
 class TrialExpiredError(Exception):
@@ -25,4 +25,4 @@ class TrialExpiredError(Exception):
 def check_trial() -> None:
     """Raise TrialExpiredError if the trial period has expired."""
     if IS_TRIAL_BUILD and time() > TRIAL_EXPIRY_TS:
-        raise TrialExpiredError("Trial period expired.")
+        raise TrialExpiredError("License expired.")
