@@ -13,8 +13,8 @@ from time import time
 # is it a trial build
 IS_TRIAL_BUILD = True
 
-# Friday, October 8, 2027 at 11:59:59 PM
-TRIAL_EXPIRY_TS = 1823039999
+# Sunday, January 31, 2027 at 11:59:59 PM
+TRIAL_EXPIRY_TS = 1801439999
 
 
 class TrialExpiredError(Exception):
