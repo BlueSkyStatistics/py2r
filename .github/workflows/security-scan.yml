@@ -1,0 +1,146 @@
+name: Security scan
+
+# Runs secret, dependency and code-pattern scanners and publishes one Markdown
+# report (job summary + "security-report" artifact). Each report is compared
+# with the previous successful run on the same branch, so new and resolved
+# findings are listed. Findings never fail the workflow.
+
+# Note: GitHub only shows the "Run workflow" button, and only runs the schedule,
+# when this file is on the repository's default branch.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 6 * * 1' # Mondays 06:00 UTC
+
+permissions:
+  contents: read
+  actions: read # to download the previous run's report for comparison
+
+concurrency:
+  group: security-scan-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Scheduled runs always start from the default branch, so they scan this branch instead.
+  # Manual runs scan the branch picked in "Run workflow".
+  SCAN_BRANCH: ${{ github.event_name == 'schedule' && 'dev' || github.ref_name }}
+  # Repo-specific settings: the scanners this Python repo runs, as named in the report.
+  SCAN_TOOLS: 'gitleaks,pip-audit,OSV-Scanner,Bandit,Semgrep'
+  # Dependency findings are reported against the lockfile they were exported from.
+  DEPS_SOURCE: 'uv.lock'
+  # Pinned tool versions, so changes between reports come from the code, not the tools.
+  GITLEAKS_VERSION: '8.21.2'
+  OSV_SCANNER_VERSION: '1.9.1'
+  SEMGREP_VERSION: '1.182.1'
+  BANDIT_VERSION: '1.9.4'
+  PIP_AUDIT_VERSION: '2.10.1'
+  UV_VERSION: '0.13.4'
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ env.SCAN_BRANCH }}
+          fetch-depth: 0 # full history for the secrets scan
+          persist-credentials: false
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+
+      - name: Install scanners
+        run: |
+          # Work folders live outside the checkout, in the runner's temp folder
+          # (upload-artifact rejects paths containing '..').
+          RESULTS="$RUNNER_TEMP/scan-results" REPORT="$RUNNER_TEMP/scan-report" TOOLS="$RUNNER_TEMP/scan-tools"
+          { echo "RESULTS=$RESULTS"; echo "REPORT=$REPORT"; echo "TOOLS=$TOOLS"; } >> "$GITHUB_ENV"
+          echo "SCAN_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+          echo "ARTIFACT_NAME=security-report-${SCAN_BRANCH//\//-}" >> "$GITHUB_ENV"
+          mkdir -p "$RESULTS" "$REPORT" "$TOOLS/bin"
+          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+            | tar xz -C "$TOOLS/bin" gitleaks
+          curl -sSfL -o "$TOOLS/bin/osv-scanner" \
+            "https://github.com/google/osv-scanner/releases/download/v${OSV_SCANNER_VERSION}/osv-scanner_linux_amd64"
+          chmod +x "$TOOLS/bin/osv-scanner"
+          # Scanners live in their own venv so they never mix with the project's dependencies.
+          python -m venv "$TOOLS/venv"
+          "$TOOLS/venv/bin/pip" install --quiet "semgrep==${SEMGREP_VERSION}" "bandit==${BANDIT_VERSION}" \
+            "pip-audit==${PIP_AUDIT_VERSION}" "uv==${UV_VERSION}"
+          ln -s "$TOOLS"/venv/bin/{semgrep,bandit,pip-audit,uv} "$TOOLS/bin/"
+          echo "$TOOLS/bin" >> "$GITHUB_PATH"
+
+      - name: Prepare dependency list
+        run: |
+          # Both dependency scanners read a pinned requirements list exported from uv.lock,
+          # covering every dependency group and platform.
+          notes=""
+          if [ -f uv.lock ]; then
+            uv export --frozen --format requirements-txt --no-hashes --all-groups --no-emit-project \
+              -o "$RESULTS/requirements.txt" -q
+          else
+            uv pip compile pyproject.toml --all-extras -o "$RESULTS/requirements.txt" -q
+            notes="No uv.lock is committed; dependencies were resolved at scan time, so results reflect a fresh install today."
+          fi
+          if [ -f .gitmodules ]; then
+            notes="${notes:+$notes||}Git submodules are not checked out or scanned."
+          fi
+          notes="${notes:+$notes||}pip-audit gives no severity; its findings use OSV-Scanner's rating for the same advisory, or Medium."
+          echo "SCAN_NOTES=$notes" >> "$GITHUB_ENV"
+
+      - name: Secrets (gitleaks, full history)
+        run: |
+          gitleaks git . --log-opts="--all" --config .github/security/gitleaks.toml \
+            --report-format json --report-path "$RESULTS/gitleaks.json" \
+            --redact=60 --exit-code 0 --no-banner
+
+      - name: Dependencies (pip-audit)
+        run: |
+          pip-audit -r "$RESULTS/requirements.txt" --no-deps --disable-pip \
+            --format json -o "$RESULTS/pip-audit.json" || true
+
+      - name: Dependencies (OSV-Scanner)
+        run: |
+          osv-scanner --format json --lockfile "requirements.txt:$RESULTS/requirements.txt" \
+            > "$RESULTS/osv.json" || true
+
+      - name: Python code patterns (Bandit)
+        run: |
+          bandit -r . -x ./.git,./tests,./.venv,./build,./dist -f json -o "$RESULTS/bandit.json" -q || true
+
+      - name: Code patterns (Semgrep)
+        env:
+          SEMGREP_SEND_METRICS: 'off'
+        run: |
+          semgrep scan --metrics=off --json --output "$RESULTS/semgrep.json" \
+            --config p/python --config p/secrets --config p/dockerfile \
+            --config .github/security/semgrep-rules.yml \
+            --exclude tests --exclude .venv --exclude build --exclude dist . || true
+
+      - name: Download previous report
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Find the most recent earlier run that has a report for this branch.
+          mkdir -p "$RUNNER_TEMP/previous"
+          for run_id in $(gh run list --repo "$GITHUB_REPOSITORY" --workflow security-scan.yml \
+              --status success --limit 20 --json databaseId -q '.[].databaseId'); do
+            if gh run download "$run_id" --repo "$GITHUB_REPOSITORY" -n "$ARTIFACT_NAME" -D "$RUNNER_TEMP/previous" 2>/dev/null; then
+              echo "Comparing with run $run_id"
+              break
+            fi
+          done
+
+      - name: Build report
+        run: |
+          python .github/security/build_report.py "$RESULTS" "$REPORT" "$RUNNER_TEMP/previous"
+          cat "$REPORT/report.md" >> "$GITHUB_STEP_SUMMARY"
+          mkdir -p "$REPORT/raw" && cp "$RESULTS"/* "$REPORT/raw/"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+          path: ${{ env.REPORT }}
+          retention-days: 90
