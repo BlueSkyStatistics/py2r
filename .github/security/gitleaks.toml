@@ -1,0 +1,7 @@
+# Default gitleaks rules plus a narrow allowlist for known false positives.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Known false positives"
+regexes = []

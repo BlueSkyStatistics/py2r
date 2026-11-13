@@ -1,0 +1,85 @@
+# Project-specific Semgrep rules used by .github/workflows/security-scan.yml
+# alongside the public p/python, p/secrets and p/dockerfile packs.
+rules:
+- id: cors-allow-any-origin
+  languages: [python]
+  severity: ERROR
+  message: >-
+    Access-Control-Allow-Origin is '*', so any web page the user opens can call this
+    local server; restrict it to the app's own origin
+  pattern: $X.send_header("Access-Control-Allow-Origin", "*")
+- id: server-bound-to-all-interfaces
+  languages: [python]
+  severity: WARNING
+  message: Server listens on every network interface, not only localhost
+  pattern-either:
+    - pattern: HTTPServer(("0.0.0.0", ...), ...)
+    - pattern: ThreadingHTTPServer(("0.0.0.0", ...), ...)
+    - pattern: websockets.serve(..., "0.0.0.0", ...)
+    - pattern: serve(..., host="0.0.0.0", ...)
+- id: r-code-built-with-string-formatting
+  languages: [python]
+  severity: WARNING
+  message: >-
+    R code is built with string formatting; any value that comes from a request can
+    inject R code unless it is escaped or validated first
+  patterns:
+    - pattern-either:
+        - pattern: robjects.r(f"...")
+        - pattern: $SELF.r(f"...")
+        - pattern: execute_r(f"...")
+        - pattern: robjects.r("..." % ...)
+        - pattern: robjects.r("...".format(...))
+        - pattern: robjects.r("..." + $X)
+        - pattern: execute_r("..." + $X)
+- id: python-exec-of-input
+  languages: [python]
+  severity: ERROR
+  message: exec/eval of a value that is not a constant runs arbitrary Python code
+  patterns:
+    - pattern-either:
+        - pattern: exec($CODE, ...)
+        - pattern: eval($CODE, ...)
+    - pattern-not: exec("...", ...)
+    - pattern-not: eval("...", ...)
+- id: paramiko-auto-add-host-key
+  languages: [python]
+  severity: WARNING
+  message: SSH host keys are accepted without verification (AutoAddPolicy / WarningPolicy)
+  pattern-either:
+    - pattern: $C.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    - pattern: $C.set_missing_host_key_policy(paramiko.WarningPolicy())
+    - pattern: $C.set_missing_host_key_policy(AutoAddPolicy())
+- id: hardcoded-secret-assignment
+  languages: [python]
+  severity: ERROR
+  message: Hardcoded token, password or API secret
+  pattern-regex: (?i)\b\w*(token|api_?secret|api_?key|password|passwd)\w*\s*[:=]\s*['"][A-Za-z0-9_\-+/=]{16,}['"]
+- id: password-on-command-line
+  languages: [generic]
+  severity: ERROR
+  message: Password passed literally on a command line in a committed script
+  pattern-regex: --password\s+"[^"$][^"]+"
+- id: compose-port-on-all-interfaces
+  languages: [yaml]
+  severity: WARNING
+  message: >-
+    Docker port is published on every interface; prefix it with 127.0.0.1: so only
+    this machine can reach the backend
+  patterns:
+    - pattern-inside: |
+        ports: [...]
+    - pattern: $P
+    - metavariable-regex:
+        metavariable: $P
+        regex: ^["']?(\$\{[^}]+\}|\d+):(\$\{[^}]+\}|\d+)["']?$
+  paths: {include: ['docker-compose*.yml', 'docker-compose*.yaml', 'compose*.yml']}
+- id: unpinned-remote-install
+  languages: [dockerfile]
+  severity: WARNING
+  message: >-
+    Package installed from a moving branch or without a version, so each image build
+    can pull different code
+  pattern-either:
+    - pattern-regex: install_github\('[^'@]+'\)
+    - pattern-regex: pip3? install(\s+--?\S+)*\s+[A-Za-z][\w.-]*(\s|$)(?!.*==)
