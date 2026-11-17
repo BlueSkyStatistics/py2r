@@ -27,8 +27,10 @@ from py2r.blueskyparser import blueSkyParser
 from py2r.rUtils import execute_r, randomString, str2bool
 import py2r.rDataset as ds
 
-if 'win' in platform:
+if platform == 'win32':  # not "'win' in platform": that also matches 'darwin'
     from py2r.win_clipboard import read_clipboard_text
+elif platform == 'darwin':
+    from py2r.mac_clipboard import read_clipboard_text
 else:
     read_clipboard_text = None
 
@@ -245,18 +247,30 @@ close(fp)""")
                 cmd = rCmd
             else:
                 clip_text = read_clipboard_text() if read_clipboard_text else None
-                robjects.globalenv['.bsky_clipboard_text'] = clip_text
-                cmd = f"BSkyMultipleEditDataGrid(startRow={startRow}, startCol={startCol}, dataSetNameOrIndex='{datasetName}', clipboardText=.bsky_clipboard_text)"
+                if clip_text:
+                    robjects.globalenv['.bsky_clipboard_text'] = clip_text
+                    cmd = f"BSkyMultipleEditDataGrid(startRow={startRow}, startCol={startCol}, dataSetNameOrIndex='{datasetName}', clipboardText=.bsky_clipboard_text)"
+                else:
+                    # rpy2 cannot convert None to an R value, so never assign it. Without
+                    # clipboardText, R's own branch for this OS reads (or reports) the clipboard.
+                    logger.info("paste_datagrid: no clipboard text read in Python, letting R handle it")
+                    cmd = f"BSkyMultipleEditDataGrid(startRow={startRow}, startCol={startCol}, dataSetNameOrIndex='{datasetName}')"
             # Open an output-only sink in append mode so cat()/print() output from
             # BSkyMultipleEditDataGrid is captured. We skip sink(type="message") because
             # redirecting rpy2's message stream causes a hang.
             r(f"""fp_paste <- file("{self.sinkfile}", open = "at", encoding = "UTF-8")
 sink(fp_paste)""")
             sink_offset = path.getsize(self.sinkfile) if path.exists(self.sinkfile) else 0
-            result = r(cmd)
-            r("""sink()
+            try:
+                result = r(cmd)
+            finally:
+                # Always undo the sink, even if R raised; otherwise all later R output
+                # keeps going to the sink file. Also drop the (possibly very large)
+                # clipboard string from R's global environment.
+                r("""sink()
 flush(fp_paste)
-close(fp_paste)""")
+close(fp_paste)
+if (exists(".bsky_clipboard_text", envir = .GlobalEnv)) rm(".bsky_clipboard_text", envir = .GlobalEnv)""")
             if path.exists(self.sinkfile):
                 with open(self.sinkfile, encoding='utf-8') as f:
                     f.seek(sink_offset)
@@ -273,7 +287,14 @@ close(fp_paste)""")
                             "output_id": output_id,
                         }
 
-            edit_result = int(result[0])
+            try:
+                edit_result = int(result[0])
+            except (TypeError, ValueError, IndexError):
+                # R returned a message (e.g. "The clipboard is empty.") instead of a status code.
+                r_message = str(result[0]) if len(result) else "no result returned from R"
+                logger.info(f"paste_datagrid: R did not apply the paste: {r_message}")
+                yield {"message": f"paste_datagrid: {r_message}", "type": "exception", "code": 500}
+                return
             logger.info(f"Value of edit_result: {edit_result}, forceRefresh: {forceRefresh}")
             if edit_result == 1 or forceRefresh:
                 # Multi-cell edit, column class changed and/or new factor levels added —

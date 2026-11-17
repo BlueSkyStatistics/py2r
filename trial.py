@@ -11,7 +11,7 @@ on the very next command, not just at launch.
 from time import time
 
 # is it a trial build
-IS_TRIAL_BUILD = True
+IS_TRIAL_BUILD = False
 
 # Sunday, January 31, 2027 at 11:59:59 PM
 TRIAL_EXPIRY_TS = 1801439999
